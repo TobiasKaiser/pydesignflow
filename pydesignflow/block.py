@@ -50,7 +50,7 @@ class Action:
 
             yield key, ResultId(block_id, action_id)    
 
-    def dependency_kwargs(self, sess):
+    def dependency_results(self, sess):
         kwargs = {}
 
         for key, result_id in self.resolve_requires(self.block.id):
@@ -63,7 +63,7 @@ class Action:
 
         cwd.mkdir(parents=True, exist_ok=True)
 
-        kwargs = self.dependency_kwargs(sess)
+        kwargs = self.dependency_results(sess)
 
         res = self.func(self.block, cwd, **kwargs)
         if res != None:

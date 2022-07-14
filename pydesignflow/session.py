@@ -1,5 +1,5 @@
 from .result import Result
-from .errors import FlowError
+from .errors import FlowError, ResultRequired
 
 class BuildSession:
     def __init__(self, flow, build_dir):
@@ -40,4 +40,4 @@ class BuildSession:
         try:
             return self.results[result_id]
         except KeyError:
-            raise FlowError(f"Required result {result_id} not found.")
+            raise ResultRequired(result_id)

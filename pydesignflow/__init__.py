@@ -1,4 +1,4 @@
-from .block import Block, action
+from .block import ResultId, Block, action
 from .result import Result
 from .flow import Flow
-from .errors import FlowError
+from .errors import FlowError, ResultRequired
