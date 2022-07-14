@@ -7,8 +7,10 @@ import os
 import importlib
 from pathlib import Path
 import argparse
+from .result import Result
+from .session import BuildSession
 
-class Flow():
+class Flow:
     def __init__(self):
         self.blocks = {}
 
@@ -20,6 +22,9 @@ class Flow():
             raise TypeError(f"Block {key} assigned multiple times.")
         self.blocks[key]=value
         value.register(self, key)
+
+    def session_at(self, build_dir):
+        return BuildSession(self, build_dir)
 
     def cli_main(self, args: list[str], prog="flow"):
         if len(self.blocks) < 1:
@@ -45,11 +50,12 @@ class Flow():
 
         args = parser.parse_args(args)
 
-        build_dir = args.build_dir
-        block_id = args.block
-        action_id = args.action
-        block = self.blocks[block_id]
-        block.actions[action_id].run(build_dir)
+        sess = self.session_at(args.build_dir)
+        sess.run_action(
+            block_id=args.block,
+            action_id=args.action,
+        )
+
 
 def import_flow_importlib():
     spec=importlib.util.spec_from_file_location("flow", Path.cwd() / "flow" / "__init__.py")
