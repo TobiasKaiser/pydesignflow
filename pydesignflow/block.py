@@ -1,5 +1,11 @@
 from pathlib import Path
 import json
+import re
+
+from .errors import FlowError
+from collections import namedtuple
+
+ResultId = namedtuple('ResultId', ('block_id', 'action_id'))
 
 class Result:
     def __init__(self):
@@ -62,90 +68,138 @@ class  ResultCollection:
     def load_all_results(self, build_dir):
         for fn in build_dir.glob("*/*/result.json"):
             block_id, action_id, res = Result.from_json(fn, build_dir)
-            print(block_id, action_id, res)
+            #print(block_id, action_id, res)
             self.results[(block_id, action_id)] = res
 
-    def get(self, block_id, action_id):
-        return self.results[(block_id, action_id)]
+    def get(self, result_id):
+        try:
+            return self.results[result_id]
+        except KeyError:
+            raise FlowError(f"Required result {result_id} not found.")
+
+def parse_requirement_spec(spec):
+    m = re.match(r"((=)?([a-zA-Z0-9_]+))?\.([a-zA-Z0-9_]+)", spec)
+    if not m:
+        raise ValueError(f"Malformed requirement spec \"{spec}\".")
+    action_id = m.group(4)
+    is_direct_ref = bool(m.group(2))
+    block_ref = m.group(3)
+
+    return is_direct_ref, block_ref, action_id
 
 class Action:
     def __init__(self, func, requires):
         self.func = func
         self.requires = requires
+        self.block = None
+        self.id = None
+        self._registered = False
 
-    def resolve_require(self, require, block_id_self, dependency_map):
-        require_split = require.split(".")
-        if len(require_split) == 1:
-            # requirement within block
-            action_id = require_split[0]
-            block_id = block_id_self
-            return (block_id, action_id)
-        elif len(require_split) == 2:
-            block_refstr = require_split[0]
-            block_id = dependency_map[block_refstr]
-            action_id = require_split[1]
-            return (block_id, action_id)
-        else:
-            raise ValueError(f"Dependency spec \"{require}\" has more than one '.'")
+    def register(self, block, action_id):
+        """
+        Called by Block
+        """
+        if self._registered:
+            raise FlowError(f"Attempt to register {self} multiple times.")
+        self.block = block
+        self.id = action_id
 
-    def resolve_requires(self, block_id, dependency_map):
-        """
-        Returns map of str to (block_id, action_id).
-        """
-        res = {}
+    def parse_requires(self):
         for k, v in self.requires.items():
-            res[k] = self.resolve_require(v, block_id, dependency_map)
-        return res
+            is_direct_ref, block_ref, action_id = parse_requirement_spec(v)
+            yield k, is_direct_ref, block_ref, action_id
+        
+    def resolve_requires(self, block_id_self):
+        for key, is_direct_ref, block_ref, action_id in self.parse_requires():
+            if is_direct_ref:
+                block_id = block_ref
+            elif block_ref:
+                block_id = self.block.dependency_map[block_ref]
+            else:
+                block_id = block_id_self
 
-    def dependency_kwargs(self, block_id, dependency_map, build_dir):
+            yield key, ResultId(block_id, action_id)    
+
+    def dependency_kwargs(self, block_id_self, build_dir):
         rescol = ResultCollection()
         rescol.load_all_results(build_dir)
 
         kwargs = {}
-        for key, (block_id, action_id) in self.resolve_requires(block_id, dependency_map).items():
-            kwargs[key] = rescol.get(block_id, action_id)
+        for key, result_id in self.resolve_requires(block_id_self):
+            kwargs[key] = rescol.get(result_id)
         return kwargs
 
-    def run(self, block, build_dir, block_id, action_id, dependency_map):
-        cwd = build_dir / block_id / action_id
+    def run(self, build_dir):
+        cwd = build_dir / self.block.id / self.id 
 
         cwd.mkdir(parents=True, exist_ok=True)
 
-        kwargs = self.dependency_kwargs(block_id, dependency_map, build_dir)
-        print(kwargs)
+        kwargs = self.dependency_kwargs(self.block.id, build_dir)
 
-        res = self.func(block, cwd, **kwargs)
+        res = self.func(self.block, cwd, **kwargs)
         if res != None:
-            res.write_json(block_id, action_id, cwd / "result.json", build_dir)
+            res.write_json(self.block.id, self.id, cwd / "result.json", build_dir)
         
-
 
 def action(requires={}):
     return lambda func: Action(func, requires)
 
 class Block():
     def __init__(self, dependency_map={}):
+        """
+        Args:
+            dependecy_map: Dict mapping  block reference strings to block IDs.
+                Keys of this dictionary must exactly match the blocks referenced.
+        """
         self.actions={}
+        self.block_references = set()
         self.auto_register_actions()
-        self.dependency_map=dependency_map # Maps block reference strings to block IDs
+        self.id = None
+        self._registered = False
+
+        if set(dependency_map.keys()) != self.get_all_block_refs():
+            raise ValueError(f"dependency_map must declare exactly "
+                f"the following block references: {self.block_references}")
+
+        self.dependency_map=dependency_map
+
+    def register(self, flow, block_id):
+        """
+        Called by Flow
+        """
+        if self._registered:
+            raise FlowError(f"Attempt to register {self} multiple times.")
+        self.id = block_id
+        self.flow = flow
+        self._registered = True
 
     def auto_register_actions(self):
         """
         Registers all Action objects in the .actions dictionary.
 
         Alternately, a similar automatic detection can be implemented using a
-        metaclass and __prepare__ (see source code).
+        metaclass and __prepare__.
         """
         for key in dir(self):
             val = getattr(self, key)
             if isinstance(val, Action):
+                # Bidirectional reference:
+                val.register(self, key)
                 self.actions[key] = val
 
-    def populate_subparser(self, subparser):
-        subparser.add_argument("action", choices=self.actions.keys())
-        subparser.set_defaults(func=self.run_action)
+    def get_all_block_refs(self):
+        block_refs = set()
+        for action in self.actions.values():
+            for _, is_direct_ref, block_ref, _ in action.parse_requires():
+                if not is_direct_ref and block_ref:
+                    block_refs.add(block_ref)
+        return block_refs
 
-    def run_action(self, args, build_dir):
-        block_id = args.block
-        action_id = args.action
-        self.actions[action_id].run(self, build_dir, block_id, action_id, self.dependency_map)
+    #def populate_subparser(self, subparser):
+    #    subparser.add_argument("action", choices=self.actions.keys())
+    #    subparser.set_defaults(func=self.run_action)
+    
+    #def run_action(self, args, build_dir):
+    #    block_id = args.block
+    #    action_id = args.action
+    #    self.actions[action_id].run(self, build_dir, block_id, action_id, self.dependency_map)

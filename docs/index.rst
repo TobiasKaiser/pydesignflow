@@ -10,6 +10,7 @@ Welcome to PyDesignFlow's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   blocks_actions
 
 
 Indices and tables
