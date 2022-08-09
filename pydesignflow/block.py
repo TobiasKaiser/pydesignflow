@@ -17,6 +17,23 @@ def parse_requirement_spec(spec):
 
     return is_direct_ref, block_ref, action_id
 
+class ActionPrototype:
+    """
+    ActionPrototypes exist once per class. They are created from the @action
+    decorator at class setup time.
+
+    The corresponding Action objects are then created at runtime using the
+    create method.
+
+    This could possibly also be solved with a metaclass.
+    """
+    def __init__(self, func, requires):
+        self.func = func
+        self.requires = requires        
+
+    def create(self):
+        return Action(self.func, self.requires)
+
 class Action:
     def __init__(self, func, requires):
         self.func = func
@@ -33,6 +50,7 @@ class Action:
             raise FlowError(f"Attempt to register {self} multiple times.")
         self.block = block
         self.id = action_id
+        self._registered = True
 
     def parse_requires(self):
         for k, v in self.requires.items():
@@ -73,7 +91,7 @@ class Action:
             sess.write_result(block_id, action_id, json_str)
 
 def action(requires={}):
-    return lambda func: Action(func, requires)
+    return lambda func: ActionPrototype(func, requires)
 
 class Block():
     def __init__(self, dependency_map={}):
@@ -88,9 +106,10 @@ class Block():
         self.id = None
         self._registered = False
 
-        if set(dependency_map.keys()) != self.get_all_block_refs():
+        expected_block_refs = self.get_all_block_refs()
+        if set(dependency_map.keys()) != expected_block_refs:
             raise ValueError(f"dependency_map must declare exactly "
-                f"the following block references: {self.block_references}")
+                f"the following block references: {expected_block_refs}")
 
         self.dependency_map=dependency_map
 
@@ -113,10 +132,11 @@ class Block():
         """
         for key in dir(self):
             val = getattr(self, key)
-            if isinstance(val, Action):
+            if isinstance(val, ActionPrototype):
                 # Bidirectional reference:
-                val.register(self, key)
-                self.actions[key] = val
+                act = val.create()
+                act.register(self, key)
+                self.actions[key] = act
 
     def get_all_block_refs(self):
         block_refs = set()
