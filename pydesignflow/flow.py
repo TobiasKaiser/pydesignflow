@@ -23,6 +23,15 @@ class Flow:
         self.blocks[key]=value
         value.register(self, key)
 
+    @property
+    def base_dir(self):
+        """
+        Returns the flow base directory, which typically includes flow.py or
+        flow/__init__.py. Currently, it is assumed that this is always the
+        current working directory (cwd). 
+        """
+        return Path.cwd()
+
     def session_at(self, build_dir):
         return BuildSession(self, build_dir)
 
