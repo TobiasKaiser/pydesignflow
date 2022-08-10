@@ -51,7 +51,7 @@ class Result:
                 return obj
             t = obj["_type"]
             if t == "Path":
-                return build_dir / Path(obj["value"])
+                return sess.build_dir / Path(obj["value"])
 
         result_json = json.loads(json_str, object_hook=object_hook)
         
