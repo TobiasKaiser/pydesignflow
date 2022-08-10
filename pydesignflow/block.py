@@ -122,6 +122,14 @@ class Block():
         self.id = block_id
         self.flow = flow
         self._registered = True
+        self.setup()
+
+    def setup(self):
+        """
+        Override this method in subclasses to provide setup functionality.
+        """
+        pass
+
 
     def auto_register_actions(self):
         """
