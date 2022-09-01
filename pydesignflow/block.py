@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import shutil
 
 from .errors import FlowError
 
@@ -79,7 +80,10 @@ class Action:
     def run(self, sess):
         cwd = sess.action_dir(self.block.id, self.id)
 
+        shutil.rmtree(cwd, ignore_errors=True)
+
         cwd.mkdir(parents=True, exist_ok=True)
+
 
         kwargs = self.dependency_results(sess)
 
