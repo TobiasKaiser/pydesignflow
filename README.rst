@@ -16,20 +16,14 @@ Principles:
 
 Todo:
 
+- list help about blocks and actions
 - Make it possible to mark actions as "always_rebuild"
-- result.json should also be created if no result is returned
 - options:
 
   - --build-requirements (only those that are not present)
   - --build-all-requirements
-  - --ignore-always-rebuild
-  - clean
-  - results (list current build results)
-  - actions, --help (list help about blocks and actions)
-
-
+ 
 .. _Build System Observations: http://www.oilshell.org/blog/2017/05/31.html
-
 
 License
 -------

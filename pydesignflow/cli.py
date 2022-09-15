@@ -44,13 +44,13 @@ class CLI:
 
     def build(self):
         build_requirements = None
-        if args.build_missing_requirements:
-            build_requirements = "missing"
-        if args.rebuild_requirements:
+        if self.args.rebuild_requirements:
             build_requirements = "all"
+        elif self.args.build_missing_requirements:
+            build_requirements = "missing"
         self.sess.run_action(
-            block_id=args.block,
-            action_id=args.action,
+            block_id=self.args.block,
+            action_id=self.args.action,
             build_requirements=build_requirements
         )
 

@@ -80,7 +80,7 @@ class BuildSession:
             result_id = ResultId(block_id, action_id)
             try:
                 r=self.get_result(result_id)
-                yield block_id, action_id, "found"
+                yield block_id, action_id, r.summary()
             except ResultRequired:
                 yield block_id, action_id, "not found"
 

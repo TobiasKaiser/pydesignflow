@@ -1,10 +1,13 @@
 from pathlib import Path
 import re
 import shutil
+from datetime import datetime
 
 from .errors import FlowError
 
 from collections import namedtuple
+from .result import Result
+
 ResultId = namedtuple('ResultId', ('block_id', 'action_id'))
 
 
@@ -84,15 +87,22 @@ class Action:
 
         cwd.mkdir(parents=True, exist_ok=True)
 
-
         kwargs = self.dependency_results(sess)
 
+        time_started = datetime.now()
         res = self.func(self.block, cwd, **kwargs)
-        if res != None:
-            block_id = self.block.id
-            action_id = self.id
-            json_str = res.json(sess, block_id, action_id)
-            sess.write_result(block_id, action_id, json_str)
+        time_finished = datetime.now()
+        if res:
+            res.returned_data = True
+        else:
+            res = Result()
+            res.returned_data = False
+        res.time_started = time_started
+        res.time_finished = time_finished
+        block_id = self.block.id
+        action_id = self.id
+        json_str = res.json(sess, block_id, action_id)
+        sess.write_result(block_id, action_id, json_str)
 
 def action(requires={}):
     return lambda func: ActionPrototype(func, requires)

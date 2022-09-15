@@ -1,9 +1,10 @@
 from pathlib import Path
 import json
+from datetime import datetime
 
 class Result:
     supported_scalar_types = (
-        Path, str
+        Path, str, bool, float, datetime
     )
 
     def __init__(self):
@@ -34,6 +35,8 @@ class Result:
                 if sess.build_dir in obj.parents:
                     obj = obj.relative_to(sess.build_dir)
                 return {"_type":"Path","value":str(obj)}
+            elif isinstance(obj, datetime):
+                return {"_type":"Time","value":obj.timestamp()}
             else:
                 return super().default(obj)
                 
@@ -52,6 +55,8 @@ class Result:
             t = obj["_type"]
             if t == "Path":
                 return sess.build_dir / Path(obj["value"])
+            elif t == "Time":
+                return datetime.fromtimestamp(obj["value"])
 
         result_json = json.loads(json_str, object_hook=object_hook)
         
@@ -69,3 +74,14 @@ class Result:
 
     def __repr__(self):
         return f"<Result {self.attrs}>"
+
+    def summary(self) -> str:
+        """Generates summary of result for status table"""
+        finished = self.time_finished
+        duration_sec = (self.time_finished - self.time_started).total_seconds()
+        duration_sec = int(duration_sec)
+        duration = f"{int(duration_sec//60)}m{duration_sec%60}s"
+        r=f"finished on {finished:%y-%m-%d, %H:%M} in {duration}"
+        if not self.returned_data:
+            r+=" (returned no data)"
+        return r
