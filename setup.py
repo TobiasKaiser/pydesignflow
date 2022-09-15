@@ -15,7 +15,7 @@ setuptools.setup(
     python_requires='>=3.8',
     entry_points={
         "console_scripts": [
-            "flow = pydesignflow.flow:main"
+            "flow = pydesignflow.shortcut:main"
         ]
     }
 )
