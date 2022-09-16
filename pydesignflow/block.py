@@ -8,80 +8,112 @@ from .errors import FlowError
 from collections import namedtuple
 from .result import Result
 
-ResultId = namedtuple('ResultId', ('block_id', 'action_id'))
-
+TargetId = namedtuple('TargetId', ('block_id', 'task_id'))
 
 def parse_requirement_spec(spec):
     m = re.match(r"((=)?([a-zA-Z0-9_]+))?\.([a-zA-Z0-9_]+)", spec)
     if not m:
         raise ValueError(f"Malformed requirement spec \"{spec}\".")
-    action_id = m.group(4)
+    task_id = m.group(4)
     is_direct_ref = bool(m.group(2))
     block_ref = m.group(3)
 
-    return is_direct_ref, block_ref, action_id
+    return is_direct_ref, block_ref, task_id
 
-class ActionPrototype:
+class TaskPrototype:
     """
-    ActionPrototypes exist once per class. They are created from the @action
+    TaskPrototypes exist once per class. They are created from the @task
     decorator at class setup time.
 
-    The corresponding Action objects are then created at runtime using the
+    The corresponding Task objects are then created at runtime using the
     create method.
 
     This could possibly also be solved with a metaclass.
+
+    This is only a problem if there are multiple instances of the same Task
+    e.g. due to multiple instances of a block.
     """
-    def __init__(self, func, requires):
+    def __init__(self, func, requires, always_rebuild):
         self.func = func
-        self.requires = requires        
+        self.requires = requires
+        self.always_rebuild = always_rebuild
 
     def create(self):
-        return Action(self.func, self.requires)
+        return Task(self.func, self.requires, self.always_rebuild)
 
-class Action:
-    def __init__(self, func, requires):
+class Task:
+    def __init__(self, func, requires, always_rebuild):
         self.func = func
         self.requires = requires
         self.block = None
         self.id = None
+        self.always_rebuild = always_rebuild
         self._registered = False
 
-    def register(self, block, action_id):
+    def register(self, block, task_id):
         """
         Called by Block
         """
         if self._registered:
             raise FlowError(f"Attempt to register {self} multiple times.")
         self.block = block
-        self.id = action_id
+        self.id = task_id
         self._registered = True
 
     def parse_requires(self):
         for k, v in self.requires.items():
-            is_direct_ref, block_ref, action_id = parse_requirement_spec(v)
-            yield k, is_direct_ref, block_ref, action_id
+            is_direct_ref, block_ref, task_id = parse_requirement_spec(v)
+            yield k, is_direct_ref, block_ref, task_id
         
-    def resolve_requires(self, block_id_self):
-        for key, is_direct_ref, block_ref, action_id in self.parse_requires():
+    def resolve_requires(self):
+        for key, is_direct_ref, block_ref, task_id in self.parse_requires():
             if is_direct_ref:
                 block_id = block_ref
             elif block_ref:
                 block_id = self.block.dependency_map[block_ref]
             else:
-                block_id = block_id_self
+                block_id = self.block.id
 
-            yield key, ResultId(block_id, action_id)    
+            yield key, TargetId(block_id, task_id)
 
     def dependency_results(self, sess):
         kwargs = {}
 
-        for key, result_id in self.resolve_requires(self.block.id):
+        for key, result_id in self.resolve_requires():
             kwargs[key] = sess.get_result(result_id)
 
         return kwargs
 
+    def result_id(self):
+        return TargetId(self.block.id, self.id)
+
+#    def plan_tasks(self, sess, rebuild:bool):
+#        # TODO
+#        # https://en.wikipedia.org/wiki/Topological_sorting
+#        # Kahn or DFS
+#         
+#        must_visit = [self.result_id()]
+#        task_list = []
+#        while len(must_visit) > 0:
+#            result_id = must_visit.pop()
+#            task = self.block.flow.task(result_id)
+#
+#            result_exists = result_id in sess.results
+#            if result_exists and (not sess.always_rebuild) and (not rebuild):
+#                continue
+#            
+#            assert not (result_id in task_list):
+#            task_list.insert(0, result_id)
+#
+#            for _, result_id in task.resolve_requires():
+#                    continue
+#                if not (result_id in  must_visit):
+#                    must_visit.append(result_id)
+#
+#        return task_list
+
     def run(self, sess):
-        cwd = sess.action_dir(self.block.id, self.id)
+        cwd = sess.task_dir(self.block.id, self.id)
 
         shutil.rmtree(cwd, ignore_errors=True)
 
@@ -100,12 +132,18 @@ class Action:
         res.time_started = time_started
         res.time_finished = time_finished
         block_id = self.block.id
-        action_id = self.id
-        json_str = res.json(sess, block_id, action_id)
-        sess.write_result(block_id, action_id, json_str)
+        task_id = self.id
+        json_str = res.json(sess, block_id, task_id)
+        sess.write_result(block_id, task_id, json_str)
 
-def action(requires={}):
-    return lambda func: ActionPrototype(func, requires)
+def task(requires={}, always_rebuild=False):
+    return lambda func: TaskPrototype(
+        func=func,
+        requires=requires,
+        always_rebuild=always_rebuild,
+    )
+
+action = task # backwards compatibility
 
 class Block():
     def __init__(self, dependency_map={}):
@@ -114,9 +152,9 @@ class Block():
             dependecy_map: Dict mapping  block reference strings to block IDs.
                 Keys of this dictionary must exactly match the blocks referenced.
         """
-        self.actions={}
+        self.tasks={}
         self.block_references = set()
-        self.auto_register_actions()
+        self.auto_register_tasks()
         self.id = None
         self._registered = False
 
@@ -145,25 +183,25 @@ class Block():
         pass
 
 
-    def auto_register_actions(self):
+    def auto_register_tasks(self):
         """
-        Registers all Action objects in the .actions dictionary.
+        Registers all Task objects in the .tasks dictionary.
 
         Alternately, a similar automatic detection can be implemented using a
         metaclass and __prepare__.
         """
         for key in dir(self):
             val = getattr(self, key)
-            if isinstance(val, ActionPrototype):
+            if isinstance(val, TaskPrototype):
                 # Bidirectional reference:
                 act = val.create()
                 act.register(self, key)
-                self.actions[key] = act
+                self.tasks[key] = act
 
     def get_all_block_refs(self):
         block_refs = set()
-        for action in self.actions.values():
-            for _, is_direct_ref, block_ref, _ in action.parse_requires():
+        for task in self.tasks.values():
+            for _, is_direct_ref, block_ref, _ in task.parse_requires():
                 if not is_direct_ref and block_ref:
                     block_refs.add(block_ref)
         return block_refs

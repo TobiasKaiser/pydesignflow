@@ -10,14 +10,17 @@ Principles:
 
 - PyDesignFlow follows an imperative approach, not a declarative approach.
 - Blocks are the first-class design objects in PyDesignFlow. Simple designs can be realized with a single block. In hierarchical designs, blocks can be integrated in other blocks. Block boundaries are set by hand, bottom-up design flow is the default.
-- Different actions can be performed on blocks.
+- Different Tasks can be performed on blocks.
 - In contast to the popular Makefile approach, no file-level prerequisite tracking is attempted. Requested flow steps are executed regardless of whether source files have been modified since the last invocation of the flow step. This simplifies the design flow considerably. See the article `Build System Observations`_ for some thoughts about this. Even small source modifications typically require discarding all design results on block level. This takes a long time anyway, so determining the appropriate next flow step is probably not be a significant burden for the user.
-- Blocks have Actions and Actions have no further configuration options.
+- Blocks have Tasks and Tasks have no further configuration options.
+
+
+
 
 Todo:
 
-- list help about blocks and actions
-- Make it possible to mark actions as "always_rebuild"
+- list help about blocks and Tasks
+- Make it possible to mark Tasks as "always_rebuild"
 - options:
 
   - --build-requirements (only those that are not present)

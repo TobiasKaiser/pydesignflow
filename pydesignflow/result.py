@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from datetime import datetime
 
+
 class Result:
     supported_scalar_types = (
         Path, str, bool, float, datetime
@@ -29,7 +30,7 @@ class Result:
     def __getattr__(self, key):
         return self.attrs[key]
 
-    def json(self, sess, block_id, action_id) -> str:
+    def json(self, sess, block_id, task_id) -> str:
         def default(obj):
             if isinstance(obj, Path):
                 if sess.build_dir in obj.parents:
@@ -43,7 +44,7 @@ class Result:
         e = json.JSONEncoder(indent=2, default=default)
         return e.encode({
             "block_id":  block_id,
-            "action_id": action_id,
+            "task_id": task_id,
             "data":      self.attrs,
         })
 
@@ -60,17 +61,17 @@ class Result:
 
         result_json = json.loads(json_str, object_hook=object_hook)
         
-        assert set(result_json.keys()) == set(("block_id", "action_id", "data"))
+        assert set(result_json.keys()) == set(("block_id", "task_id", "data"))
 
         block_id  = result_json["block_id"]
-        action_id = result_json["action_id"]
+        task_id = result_json["task_id"]
         attrs     = result_json["data"]
         
         res = Result()
         for k, v in attrs.items():
             res.attrs[k] = v
 
-        return block_id, action_id, res
+        return block_id, task_id, res
 
     def __repr__(self):
         return f"<Result {self.attrs}>"

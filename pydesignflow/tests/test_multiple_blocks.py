@@ -1,14 +1,14 @@
 import pytest
-from .. import Block, ResultId, Flow, action, Result, ResultRequired
+from .. import Block, TargetId, Flow, task, Result, ResultRequired
 
 class BlockA(Block):
-    @action()
+    @task()
     def stepX(self, cwd):
         r = Result()
         r.my_key = "A.X res"
         return r
 
-    @action(requires={'x':'.stepX'})
+    @task(requires={'x':'.stepX'})
     def stepY(self, cwd, x):
         r = Result()
         r.my_key = f"A.Y res ({x.my_key})"
@@ -19,7 +19,7 @@ class BlockB(Block):
     Test block reference by-ID.
     """
 
-    @action(requires={'y':'=A1.stepY'})
+    @task(requires={'y':'=A1.stepY'})
     def stepZ(self, cwd, y):
         r = Result()
         r.my_key = f"B.Z res ({y.my_key})"
@@ -30,7 +30,7 @@ class BlockC(Block):
     Tests block reference through dependency map.
     """
 
-    @action(requires={'y':'a.stepY'})
+    @task(requires={'y':'a.stepY'})
     def stepZ(self, cwd, y):
         r = Result()
         r.my_key = f"B.Z res ({y.my_key})"
@@ -45,7 +45,7 @@ class BlockD(Block):
         super().__init__(**kwargs)
         self.argument = argument
 
-    @action()
+    @task()
     def stepX(self, cwd):
         r = Result()
         r.my_key = f"D[{self.argument}].X res"
@@ -57,13 +57,13 @@ class BlockE(Block):
     Tests block reference through dependency map.
     """
 
-    @action(requires={'x':'r.stepX'})
+    @task(requires={'x':'r.stepX'})
     def stepY(self, cwd, x):
         r = Result()
         r.my_key = f"E.Y res ({x.my_key})"
         return r
 
-    @action(requires={'xr':'r.stepX', 'xg':'g.stepX', 'xb':'b.stepX'})
+    @task(requires={'xr':'r.stepX', 'xg':'g.stepX', 'xb':'b.stepX'})
     def stepZ(self, cwd, xr, xg, xb):
         r = Result()
         r.my_key = f"E.Z res ({xr.my_key}, {xg.my_key}, {xb.my_key})"
@@ -92,11 +92,11 @@ def test_a1_b1(tmp_path):
         ("B1", "stepZ"),
     ]
 
-    for block_id, action_id in plan:
-        sess.run_action(block_id, action_id)
-        assert (sess.build_dir / block_id / action_id / 'result.json').exists()
+    for block_id, task_id in plan:
+        sess.run_task(block_id, task_id)
+        assert (sess.build_dir / block_id / task_id / 'result.json').exists()
     
-    res = sess.get_result(ResultId('B1', 'stepZ')).my_key
+    res = sess.get_result(TargetId('B1', 'stepZ')).my_key
     assert res == "B.Z res (A.Y res (A.X res))"
 
 def test_a1_c1(tmp_path):
@@ -108,11 +108,11 @@ def test_a1_c1(tmp_path):
         ("C1", "stepZ"),
     ]
 
-    for block_id, action_id in plan:
-        sess.run_action(block_id, action_id)
-        assert (sess.build_dir / block_id / action_id / 'result.json').exists()
+    for block_id, task_id in plan:
+        sess.run_task(block_id, task_id)
+        assert (sess.build_dir / block_id / task_id / 'result.json').exists()
     
-    res = sess.get_result(ResultId('C1', 'stepZ')).my_key
+    res = sess.get_result(TargetId('C1', 'stepZ')).my_key
     assert res == "B.Z res (A.Y res (A.X res))"
 
 
@@ -127,12 +127,12 @@ def test_d_e(tmp_path):
         ("E1", "stepZ"),
     ]
 
-    for block_id, action_id in plan:
-        sess.run_action(block_id, action_id)
-        assert (sess.build_dir / block_id / action_id / 'result.json').exists()
+    for block_id, task_id in plan:
+        sess.run_task(block_id, task_id)
+        assert (sess.build_dir / block_id / task_id / 'result.json').exists()
     
-    res = sess.get_result(ResultId('E1', 'stepY')).my_key
+    res = sess.get_result(TargetId('E1', 'stepY')).my_key
     assert res == "E.Y res (D[red].X res)"
 
-    res = sess.get_result(ResultId('E1', 'stepZ')).my_key
+    res = sess.get_result(TargetId('E1', 'stepZ')).my_key
     assert res == "E.Z res (D[red].X res, D[green].X res, D[blue].X res)"

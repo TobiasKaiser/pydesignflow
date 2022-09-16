@@ -1,49 +1,49 @@
 from .result import Result
 from .errors import FlowError, ResultRequired
 import shutil
-from .block import ResultId
+from .block import TargetId
 import tabulate
 tabulate.PRESERVE_WHITESPACE = True
 
 class BuildSession:
+
     def __init__(self, flow, build_dir):
         self.flow = flow
         self.build_dir = build_dir
-        self.results = None # (block_id, action_id) -> Result map
+        self.results = None # (block_id, task_id) -> Result map
         self.reload_results()
 
-    def run_action(self, block_id, action_id, build_requirements=None, ignore_rebuild_always=False):
+    def run_task(self, block_id, task_id, build_requirements=None):
         """
         Args:
             build_requirements: None, "missing" or "all"
-            ignore_rebuild_always: True / False
         """
-        block = self.flow.blocks[block_id]
-        block.actions[action_id].run(self)
+        task = self.flow.task(TargetId(block_id, task_id))
+        task.run(self)
     
-    def action_dir(self, block_id, action_id):
-        return self.build_dir / block_id / action_id
+    def task_dir(self, block_id, task_id):
+        return self.build_dir / block_id / task_id
 
-    def write_result(self, block_id, action_id, json_str):
-        fn = self.action_dir(block_id, action_id) / "result.json"
+    def write_result(self, block_id, task_id, json_str):
+        fn = self.task_dir(block_id, task_id) / "result.json"
         with open(fn, "w") as f:
             f.write(json_str)
 
-        loaded_block_id, loaded_action_id, loaded_result = Result.from_json(self, json_str)
+        loaded_block_id, loaded_task_id, loaded_result = Result.from_json(self, json_str)
         
 
-        assert loaded_action_id == action_id
+        assert loaded_task_id == task_id
         assert loaded_block_id == block_id
 
-        self.results[(block_id, action_id)] = loaded_result
+        self.results[(block_id, task_id)] = loaded_result
 
     def reload_results(self):
         self.results = {}
         for fn in self.build_dir.glob("*/*/result.json"):
             with open(fn, "r") as f:
                 json_str = f.read()
-            block_id, action_id, res = Result.from_json(self, json_str)
-            self.results[(block_id, action_id)] = res
+            block_id, task_id, res = Result.from_json(self, json_str)
+            self.results[(block_id, task_id)] = res
 
     def get_result(self, result_id):
         try:
@@ -51,47 +51,47 @@ class BuildSession:
         except KeyError:
             raise ResultRequired(result_id)
 
-    def clean(self, block_id:str=None, action_id:str=None):
+    def clean(self, block_id:str=None, task_id:str=None):
         """
-        If block_id and action_id are given, only the specified result is deleted.
-        If only block_id is given, results of all actions of that block are deleted.
-        If neither block_id nor action_id are given, all results of all block are deleted. 
+        If block_id and task_id are given, only the specified result is deleted.
+        If only block_id is given, results of all tasks of that block are deleted.
+        If neither block_id nor task_id are given, all results of all block are deleted. 
         """
-        for i in block_id, action_id:
+        for i in block_id, task_id:
             # Very primitive sanity check:
             if not i:
                 continue
             assert i.find("..") < 0
             assert i.find("/") < 0
 
-        if block_id and action_id:
-            shutil.rmtree(self.build_dir / block_id / action_id, ignore_errors=True)
+        if block_id and task_id:
+            shutil.rmtree(self.build_dir / block_id / task_id, ignore_errors=True)
         elif block_id:
             shutil.rmtree(self.build_dir / block_id, ignore_errors=True)
         else:
-            assert not action_id
+            assert not task_id
             # Remote all results
             shutil.rmtree(self.build_dir, ignore_errors=True)
         self.reload_results()
 
     def status_block(self, block_id:str):
         block = self.flow[block_id]
-        for action_id in block.actions:
-            result_id = ResultId(block_id, action_id)
+        for task_id in block.tasks:
+            result_id = TargetId(block_id, task_id)
             try:
                 r=self.get_result(result_id)
-                yield block_id, action_id, r.summary()
+                yield block_id, task_id, r.summary()
             except ResultRequired:
-                yield block_id, action_id, "not found"
+                yield block_id, task_id, "not found"
 
     def format_status(self, status_list):
         table = [["Target", "Status"]]
         block_id_last = None
-        for block_id, action_id, status in status_list:
+        for block_id, task_id, status in status_list:
             if block_id_last != block_id:
                 table.append([block_id, ""])
                 block_id_last = block_id
-            table.append([f"  {action_id}", status])
+            table.append([f"  {task_id}", status])
         return tabulate.tabulate(table, headers="firstrow", tablefmt="simple", colalign="r")
 
 

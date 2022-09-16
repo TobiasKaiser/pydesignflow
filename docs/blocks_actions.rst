@@ -1,5 +1,6 @@
-Blocks & Actions
-================
+Blocks, Tasks and Targets
+=========================
+
 
 Blocks
 ------
@@ -18,31 +19,31 @@ In order to use blocks, they need to be integrated using a Flow object::
 
 In this case, a new instance of TestBlock is assigned to the block ID *'test'*.
 
-Actions
--------
+Tasks (formerly actions)
+------------------------
 
-Define actions by implementing methods and decorating them with *@pdf.action()*::
+Define Tasks by implementing methods and decorating them with *@pdf.task()*::
 
      class TestBlock(pdf.Block):
-        @pdf.action()
+        @pdf.task()
         def syn(self, cwd):
             syn = pdf.Result()
             # ...
             syn.result1 = "asdf"
             return syn
 
-The *action()* decorator creates a Action class for the function that it decorates.
+The *Task()* decorator creates a Task class for the function that it decorates.
 
-This is the only supported way for defining actions. Please do not create custom action classes, such as by creating a subclass of Action.
+This is the only supported way for defining Tasks. Please do not create custom Task classes, such as by creating a subclass of Task.
 
-Action dependencies
--------------------
+Task dependencies
+-----------------
 
-Declare dependencies between actions using the *requires* argument to *@action*.
+Declare dependencies between Tasks using the *requires* argument to *@Task*.
 
-Example for delaring a action "pnr"::
+Example for delaring a Task "pnr"::
 
-    @pdf.action(requires={'syn':'.syn'})
+    @pdf.task(requires={'syn':'.syn'})
     def pnr(self, cwd, syn):
         pnr = pdf.Result()
 
@@ -52,25 +53,25 @@ Example for delaring a action "pnr"::
         pnr.result1 = "asdf"
         return pnr
 
-The method name "pnr" is in also called the *action ID*.
+The method name "pnr" is in also called the *Task ID*.
 
-The keys of the *requires* dictionary are mapped to keyword arguments of the corresponding action function. Its values are **requirement spec** strings, which can be one of the following:
+The keys of the *requires* dictionary are mapped to keyword arguments of the corresponding Task function. Its values are **requirement spec** strings, which can be one of the following:
 
-1. To require the result of an action with the action ID "action_id", the requirement spec should be ".action_id".
-2. To require the result of an action "action_id" in a referenced block "block_ref", the requirement spec should be "block_ref.action_id".
-3. A direct reference to a block by its ID is also possible: "=block_id.action_id"
+1. To require the result of an Task with the Task ID "Task_id", the requirement spec should be ".Task_id".
+2. To require the result of an Task "Task_id" in a referenced block "block_ref", the requirement spec should be "block_ref.Task_id".
+3. A direct reference to a block by its ID is also possible: "=block_id.Task_id"
 
 Variant 2 is generally preferred over variant 3. Variant 2 requires that *"block_ref"* is included the *dependency_map* dictionary that is passed to the Block on creation. Example::
     
     class TestBlock(pdf.Block):
-        @pdf.action()
+        @pdf.task()
         def syn(self, cwd):
             syn = pdf.Result()
             syn.result1 = "asdf"
             return syn
 
     class AnotherBlock(pdf.Block):
-        @pdf.action({'syn_of_xyz':'xyz.syn'})
+        @pdf.task({'syn_of_xyz':'xyz.syn'})
         def syn(self, cwd, syn_of_xyz):
             syn = pdf.Result()
 
@@ -89,14 +90,16 @@ This layer of indirection makes it possible to swap out the subblock *xyz* of *A
 
 By using only requirement spec variants 1 and 2, block IDs can be entirely kept out of Block subclass code; only the flow declaration will need to deal with block IDs.
 
-Invoking flow actions
----------------------
+Configurable Blocks & Tasks
+---------------------------
 
-
-
-Configurable Blocks & Actions
------------------------------
-
-Actions are not configurable. If you want your block to provide multiple similar action (e. g. behavioral simulation, netlist simulation), declare them as as separate actions. Functionality shared between actions should best be encapsulated in functions or non-@action methods.
+Tasks are not configurable. If you want your block to provide multiple similar Task (e. g. behavioral simulation, netlist simulation), declare them as as separate Tasks. Functionality shared between Tasks should best be encapsulated in functions or non-@task methods.
 
 If configurable blocks are desired, this should be done at Block subclass instatiation time, i. e. during flow declaration. Once created, a Block subclass object should be considered fixed in configuration.
+
+Targets
+-------
+
+Tuples (block_id, task_id) are unique flow targets. Tasks without a block_id are not unique, as multiple block instances could exist.
+
+Building a target produces a **result**.
