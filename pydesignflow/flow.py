@@ -5,7 +5,7 @@ Provides the Flow class and a corresponding 'flow' command-line interface.
 from pathlib import Path
 from .session import BuildSession
 from .cli import CLI
-from .block import TargetId, Task
+from .block import TargetId, Target
 
 class Flow:
     def __init__(self):
@@ -38,5 +38,5 @@ class Flow:
     def cli_main(self, args: list[str], prog="flow"):
         CLI(self).main(args, prog)
 
-    def task(self, result_id: TargetId) -> Task:
+    def target(self, result_id: TargetId) -> Target:
         return self[result_id.block_id].tasks[result_id.task_id]

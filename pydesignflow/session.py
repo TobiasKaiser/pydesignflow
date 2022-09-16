@@ -13,13 +13,77 @@ class BuildSession:
         self.results = None # (block_id, task_id) -> Result map
         self.reload_results()
 
-    def run_task(self, block_id, task_id, build_requirements=None):
+    def plan_run(self, block_id, task_id, build_requirements=None) -> list[TargetId]:
+        assert build_requirements in (None, "missing", "all")
+        requested_tid = TargetId(block_id, task_id)
+        rebuild = (build_requirements == "all")
+        deplist = self.dependency_list(requested_tid, rebuild)
+        if not build_requirements:
+            # If build_requirements is None, we do not want to build anything
+            # other than always_rebuild targets and the requested target.
+            for dep_tid in deplist:
+                if dep_tid == requested_tid:
+                    continue
+                target = self.flow.target(dep_tid)
+                if target.always_rebuild:
+                    continue
+                raise ResultRequired(dep_tid)
+        return deplist
+
+    def print_plan(self, plan: list[TargetId]):
+        print("Planned execution:")
+        table = [['Idx', 'Block', 'Task']]
+        for idx, dep in enumerate(plan):
+            table.append([idx, dep.block_id, dep.task_id])
+        print(tabulate.tabulate(table, headers="firstrow", tablefmt="simple"))
+        print()
+
+    def run(self, block_id, task_id, build_requirements=None, dry_run=False, verbose=False):
         """
         Args:
             build_requirements: None, "missing" or "all"
         """
-        task = self.flow.task(TargetId(block_id, task_id))
-        task.run(self)
+        plan = self.plan_run(block_id, task_id, build_requirements)
+        
+        if verbose:
+            self.print_plan(plan)
+
+        if dry_run:
+            return
+
+        for tid in plan:
+            if verbose:
+                print(f"Running target {tid.block_id}.{tid.task_id}.")
+            target = self.flow.target(tid)
+            target.run(self)
+            if verbose:
+                print(f"Target {tid.block_id}.{tid.task_id} completed.")
+                print()
+
+
+    run_target = run # For compatibility - remove this at some point.
+
+    def dependency_list(self, tid: TargetId, rebuild:bool) -> list[TargetId]:
+        """
+        Returns list of dependencies of target tid, including tid.
+        Performs topological sorting by depth-first search.
+        Args:
+            tid: target_id. Will not be included in output list.
+            rebuild: Set to True to rebuild targets that are already present.
+        """
+        # See https://guides.codepath.com/compsci/Topological-Sort
+
+        topo_order = []
+        visited = set()
+        def dfs(tid):
+            visited.add(tid)
+            target =  self.flow.target(tid)
+            for neighbor_tid in target.missing_requires(self, rebuild=rebuild):
+                if not (neighbor_tid in visited):
+                    dfs(neighbor_tid)
+            topo_order.append(tid)
+        dfs(tid)
+        return topo_order
     
     def task_dir(self, block_id, task_id):
         return self.build_dir / block_id / task_id
@@ -92,8 +156,7 @@ class BuildSession:
                 table.append([block_id, ""])
                 block_id_last = block_id
             table.append([f"  {task_id}", status])
-        return tabulate.tabulate(table, headers="firstrow", tablefmt="simple", colalign="r")
-
+        return tabulate.tabulate(table, headers="firstrow", tablefmt="simple")
 
     def status(self, block_id:str=None) -> str:
         """

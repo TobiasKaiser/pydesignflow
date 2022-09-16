@@ -17,13 +17,13 @@ class CLI:
         parser.add_argument("--build-dir", "-B", default=default_build_dir,
             help="Build directory")
         parser.add_argument("--build-missing-requirements", "-r", action="store_true",
-            help="In addition to specified action, build missing requirements.")
+            help="In addition to specified task, build missing requirements.")
         parser.add_argument("--rebuild-requirements", "-R", action="store_true",
             help="Re-build all requirements, even if flow results were found.")
         parser.add_argument("--clean", "-c", action="store_true",
             help="Remove flow results.")
         parser.add_argument("block", nargs='?')
-        parser.add_argument("action", nargs='?')
+        parser.add_argument("task", nargs='?')
 
         return parser
 
@@ -36,8 +36,8 @@ class CLI:
         self.sess = self.flow.session_at(self.args.build_dir)
 
         if self.args.clean:
-            self.sess.clean(self.args.block, self.args.action)
-        elif self.args.block and self.args.action:
+            self.sess.clean(self.args.block, self.args.task)
+        elif self.args.block and self.args.task:
             self.build()
         else:
             self.print_status()
@@ -48,17 +48,18 @@ class CLI:
             build_requirements = "all"
         elif self.args.build_missing_requirements:
             build_requirements = "missing"
-        self.sess.run_action(
+        self.sess.run(
             block_id=self.args.block,
-            action_id=self.args.action,
-            build_requirements=build_requirements
+            task_id=self.args.task,
+            build_requirements=build_requirements,
+            verbose=True
         )
 
     def print_status(self):
         if self.args.build_missing_requirements:
-            print("--build-missing-requirements requires block and action")
+            print("--build-missing-requirements requires block and task")
             sys.exit(1)
         if self.args.rebuild_requirements:
-            print("--rebuild-requirements requires block and action")
+            print("--rebuild-requirements requires block and task")
             sys.exit(1)
         print(self.sess.status(block_id=self.args.block))

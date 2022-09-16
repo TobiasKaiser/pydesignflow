@@ -20,17 +20,17 @@ def parse_requirement_spec(spec):
 
     return is_direct_ref, block_ref, task_id
 
-class TaskPrototype:
+class TargetPrototype:
     """
-    TaskPrototypes exist once per class. They are created from the @task
+    TargetPrototypes exist once per class. They are created from the @task
     decorator at class setup time.
 
-    The corresponding Task objects are then created at runtime using the
+    The corresponding Target objects are then created at runtime using the
     create method.
 
     This could possibly also be solved with a metaclass.
 
-    This is only a problem if there are multiple instances of the same Task
+    This is only a problem if there are multiple instances of the same Target
     e.g. due to multiple instances of a block.
     """
     def __init__(self, func, requires, always_rebuild):
@@ -39,9 +39,9 @@ class TaskPrototype:
         self.always_rebuild = always_rebuild
 
     def create(self):
-        return Task(self.func, self.requires, self.always_rebuild)
+        return Target(self.func, self.requires, self.always_rebuild)
 
-class Task:
+class Target:
     def __init__(self, func, requires, always_rebuild):
         self.func = func
         self.requires = requires
@@ -76,6 +76,13 @@ class Task:
 
             yield key, TargetId(block_id, task_id)
 
+    def missing_requires(self, sess, rebuild:bool):
+        for _, tid in self.resolve_requires():
+            result_exists = (tid in sess.results)
+            target = sess.flow.target(tid)
+            if (not result_exists) or rebuild or target.always_rebuild:
+                yield tid
+
     def dependency_results(self, sess):
         kwargs = {}
 
@@ -84,33 +91,8 @@ class Task:
 
         return kwargs
 
-    def result_id(self):
+    def target_id(self):
         return TargetId(self.block.id, self.id)
-
-#    def plan_tasks(self, sess, rebuild:bool):
-#        # TODO
-#        # https://en.wikipedia.org/wiki/Topological_sorting
-#        # Kahn or DFS
-#         
-#        must_visit = [self.result_id()]
-#        task_list = []
-#        while len(must_visit) > 0:
-#            result_id = must_visit.pop()
-#            task = self.block.flow.task(result_id)
-#
-#            result_exists = result_id in sess.results
-#            if result_exists and (not sess.always_rebuild) and (not rebuild):
-#                continue
-#            
-#            assert not (result_id in task_list):
-#            task_list.insert(0, result_id)
-#
-#            for _, result_id in task.resolve_requires():
-#                    continue
-#                if not (result_id in  must_visit):
-#                    must_visit.append(result_id)
-#
-#        return task_list
 
     def run(self, sess):
         cwd = sess.task_dir(self.block.id, self.id)
@@ -137,13 +119,11 @@ class Task:
         sess.write_result(block_id, task_id, json_str)
 
 def task(requires={}, always_rebuild=False):
-    return lambda func: TaskPrototype(
+    return lambda func: TargetPrototype(
         func=func,
         requires=requires,
         always_rebuild=always_rebuild,
     )
-
-action = task # backwards compatibility
 
 class Block():
     def __init__(self, dependency_map={}):
@@ -185,14 +165,14 @@ class Block():
 
     def auto_register_tasks(self):
         """
-        Registers all Task objects in the .tasks dictionary.
+        Registers all Target objects in the .tasks dictionary.
 
         Alternately, a similar automatic detection can be implemented using a
         metaclass and __prepare__.
         """
         for key in dir(self):
             val = getattr(self, key)
-            if isinstance(val, TaskPrototype):
+            if isinstance(val, TargetPrototype):
                 # Bidirectional reference:
                 act = val.create()
                 act.register(self, key)
