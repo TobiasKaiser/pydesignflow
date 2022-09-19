@@ -1,5 +1,5 @@
 import pytest
-from .. import Block, TargetId, Flow, task, Result, ResultRequired
+from pydesignflow import Block, TargetId, Flow, task, Result, ResultRequired
 
 class BlockA(Block):
     @task()

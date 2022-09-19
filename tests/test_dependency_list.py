@@ -1,6 +1,9 @@
 import pytest
-from .. import TargetId, ResultRequired
-from .example_block import ExampleBlock, get_flow_session
+from pydesignflow import TargetId, ResultRequired
+
+def get_flow_session(build_dir):
+    from .flow_example1 import flow
+    return flow.session_at(build_dir)
 
 def test_deplist_step2(tmp_path):
     sess = get_flow_session(tmp_path)

@@ -1,4 +1,4 @@
-from .. import Block, task, Flow, Result
+from pydesignflow import Block, task, Result
 
 class ExampleBlock(Block):
     @task()
@@ -64,10 +64,3 @@ class ExampleBlock(Block):
         r = Result()
         r.my_key = f"step10 res ({s9.my_key})"
         return r
-
-
-def get_flow_session(build_dir):
-    flow = Flow()
-    flow['top'] = ExampleBlock()
-
-    return flow.session_at(build_dir)
