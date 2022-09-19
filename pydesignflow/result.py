@@ -79,10 +79,17 @@ class Result:
     def summary(self) -> str:
         """Generates summary of result for status table"""
         finished = self.time_finished
+        if finished.date() == datetime.today().date():
+            finished_str = f"{finished:%H:%M}"
+        else:
+            finished_str = f"{finished:%y-%m-%d}"
         duration_sec = (self.time_finished - self.time_started).total_seconds()
         duration_sec = int(duration_sec)
-        duration = f"{int(duration_sec//60)}m{duration_sec%60}s"
-        r=f"finished on {finished:%y-%m-%d, %H:%M} in {duration}"
-        if not self.returned_data:
-            r+=" (returned no data)"
+        if duration_sec > 60:
+            duration_str = f"{int(duration//60)}m"
+        else:
+            duration_str = f"{duration_sec%60}s"
+        r=f"finished {finished_str} in {duration_str}"
+        #if not self.returned_data:
+        #    r+=" (w/o data)"
         return r

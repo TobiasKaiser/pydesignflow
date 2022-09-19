@@ -42,6 +42,10 @@ class TargetPrototype:
         return Target(self.func, self.requires, self.always_rebuild)
 
 class Target:
+    @property
+    def __doc__(self):
+        return self.func.__doc__
+
     def __init__(self, func, requires, always_rebuild):
         self.func = func
         self.requires = requires

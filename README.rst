@@ -16,8 +16,8 @@ Principles:
 
 Todo:
 
-- list help about blocks and Tasks
 - test cli
+- Automatically generate flow documentation
 
 .. _Build System Observations: http://www.oilshell.org/blog/2017/05/31.html
 

@@ -140,23 +140,24 @@ class BuildSession:
 
     def status_block(self, block_id:str):
         block = self.flow[block_id]
+        yield [block_id, "", block.__doc__]
         for task_id in block.tasks:
-            result_id = TargetId(block_id, task_id)
-            try:
-                r=self.get_result(result_id)
-                yield block_id, task_id, r.summary()
-            except ResultRequired:
-                yield block_id, task_id, "not found"
+            tid = TargetId(block_id, task_id)
+            target = self.flow.target(tid)
+            if tid in self.results:
+                res=self.get_result(tid)
+                status=res.summary()
+            else:
+                expected_dir = self.build_dir / block_id / task_id
+                if expected_dir.exists():
+                    status="dir without result -> running or failed"
+                else:
+                    status="not found"
+            yield [f"  {task_id}",  status, target.__doc__]
 
     def format_status(self, status_list):
-        table = [["Target", "Status"]]
-        block_id_last = None
-        for block_id, task_id, status in status_list:
-            if block_id_last != block_id:
-                table.append([block_id, ""])
-                block_id_last = block_id
-            table.append([f"  {task_id}", status])
-        return tabulate.tabulate(table, headers="firstrow", tablefmt="simple")
+        table = [["Target", "Status", "Help"]]
+        return tabulate.tabulate(status_list, headers="firstrow", tablefmt="simple")
 
     def status(self, block_id:str=None) -> str:
         """
