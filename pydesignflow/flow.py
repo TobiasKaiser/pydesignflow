@@ -5,7 +5,7 @@ Provides the Flow class and a corresponding 'flow' command-line interface.
 from pathlib import Path
 from .session import BuildSession
 from .cli import CLI
-from .block import TargetId, Target
+from .target import TargetId, Target
 
 class Flow:
     def __init__(self):
@@ -35,7 +35,14 @@ class Flow:
     def session_at(self, build_dir):
         return BuildSession(self, build_dir)
 
-    def cli_main(self, args: list[str], prog="flow"):
+    def cli_main(self, args: list[str], prog="flow") -> None:
+        """
+        Invoke the Flow's command line interface.
+        
+        Args:
+            args: List of command line arguments, e.g. argv[1:]
+            prog: Name of executable, e.g. argv[0]
+        """
         CLI(self).main(args, prog)
 
     def target(self, result_id: TargetId) -> Target:

@@ -77,7 +77,10 @@ class Result:
         return f"<Result {self.attrs}>"
 
     def summary(self) -> str:
-        """Generates summary of result for status table"""
+        """Returns textual summary of result for status table.
+
+        Returns:
+            str: e.g. "finished 10:17 in 13m"."""
         finished = self.time_finished
         if finished.date() == datetime.today().date():
             finished_str = f"{finished:%H:%M}"

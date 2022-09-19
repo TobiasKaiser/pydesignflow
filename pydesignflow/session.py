@@ -1,8 +1,10 @@
+import shutil
+import tabulate
+
 from .result import Result
 from .errors import FlowError, ResultRequired
-import shutil
-from .block import TargetId
-import tabulate
+from .target import TargetId
+
 tabulate.PRESERVE_WHITESPACE = True
 
 class BuildSession:

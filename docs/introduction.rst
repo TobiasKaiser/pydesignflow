@@ -1,6 +1,5 @@
-Blocks, Tasks and Targets
-=========================
-
+Introduction
+============
 
 Blocks
 ------
@@ -19,6 +18,8 @@ In order to use blocks, they need to be integrated using a Flow object::
 
 In this case, a new instance of TestBlock is assigned to the block ID *'test'*.
 
+If configurable blocks are desired, this should be done at Block subclass instatiation time, i. e. during flow declaration. Once created, a Block subclass object should be considered fixed in configuration.
+
 Tasks (formerly actions)
 ------------------------
 
@@ -32,16 +33,19 @@ Define Tasks by implementing methods and decorating them with *@pdf.task()*::
             syn.result1 = "asdf"
             return syn
 
-The *Task()* decorator creates a Task class for the function that it decorates.
+The *task()* decorator creates a TargetPrototype class for the function that it decorates. This is the only supported way for defining tasks. Please do not create custom TargetPrototype classes, such as by creating a subclass of TargetPrototype.
 
-This is the only supported way for defining Tasks. Please do not create custom Task classes, such as by creating a subclass of Task.
+**Tasks are not configurable.** If you want your block to provide multiple similar Task (e. g. behavioral simulation, netlist simulation), declare them as as separate Tasks. Functionality shared between Tasks should best be encapsulated in functions or non-@task methods.
 
-Task dependencies
+
+.. _taskdeps:
+
+Task Dependencies
 -----------------
 
-Declare dependencies between Tasks using the *requires* argument to *@Task*.
+Declare dependencies between tasks using the *requires* argument to *@task*.
 
-Example for delaring a Task "pnr"::
+Example for delaring a task "pnr"::
 
     @pdf.task(requires={'syn':'.syn'})
     def pnr(self, cwd, syn):
@@ -89,13 +93,6 @@ Variant 2 is generally preferred over variant 3. Variant 2 requires that *"block
 This layer of indirection makes it possible to swap out the subblock *xyz* of *AnotherBlock* without any modifications to the *AnotherBlock* class.
 
 By using only requirement spec variants 1 and 2, block IDs can be entirely kept out of Block subclass code; only the flow declaration will need to deal with block IDs.
-
-Configurable Blocks & Tasks
----------------------------
-
-Tasks are not configurable. If you want your block to provide multiple similar Task (e. g. behavioral simulation, netlist simulation), declare them as as separate Tasks. Functionality shared between Tasks should best be encapsulated in functions or non-@task methods.
-
-If configurable blocks are desired, this should be done at Block subclass instatiation time, i. e. during flow declaration. Once created, a Block subclass object should be considered fixed in configuration.
 
 Targets
 -------
