@@ -13,6 +13,7 @@ Welcome to PyDesignFlow's documentation!
    introduction
    reference
    design_decisions
+   sphinx_ext
    tests/index
    todo
 

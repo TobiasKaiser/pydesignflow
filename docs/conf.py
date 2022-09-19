@@ -35,6 +35,7 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon', # to use Google-style docstrings
+    'pydesignflow.sphinx_ext', # custom Sphinx extension
 ]
 
 # Add any paths that contain templates here, relative to this directory.

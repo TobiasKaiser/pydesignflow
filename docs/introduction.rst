@@ -20,8 +20,8 @@ In this case, a new instance of TestBlock is assigned to the block ID *'test'*.
 
 If configurable blocks are desired, this should be done at Block subclass instatiation time, i. e. during flow declaration. Once created, a Block subclass object should be considered fixed in configuration.
 
-Tasks (formerly actions)
-------------------------
+Tasks
+-----
 
 Define Tasks by implementing methods and decorating them with *@pdf.task()*::
 

@@ -4,7 +4,7 @@ Reference
 @task decorator
 ---------------
 
-.. autofunction:: pydesignflow.task
+.. autodecorator:: pydesignflow.task
 
 Block
 -----

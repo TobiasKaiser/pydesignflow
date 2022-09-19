@@ -1,3 +1,5 @@
+.. _flow_example1:
+
 flow_example1
 =============
 
@@ -7,7 +9,9 @@ flow_example1
 
    ExampleBlock dependency graph
 
+.. _flow_example1_autodoc:
+
 Auto-generated doc 
 ------------------
 
-.. autoclass:: tests.flow_example1.flow
+.. designflow:: tests.flow_example1
