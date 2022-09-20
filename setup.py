@@ -13,9 +13,12 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
     ],
     python_requires='>=3.8',
+    install_requires=[
+        "tabulate >= 0.8.0",
+    ],
     entry_points={
         "console_scripts": [
             "flow = pydesignflow.shortcut:main"
         ]
-    }
+    },
 )
