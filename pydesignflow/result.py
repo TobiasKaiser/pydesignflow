@@ -89,7 +89,7 @@ class Result:
         duration_sec = (self.time_finished - self.time_started).total_seconds()
         duration_sec = int(duration_sec)
         if duration_sec > 60:
-            duration_str = f"{int(duration//60)}m"
+            duration_str = f"{int(duration_sec//60)}m"
         else:
             duration_str = f"{duration_sec%60}s"
         r=f"finished {finished_str} in {duration_str}"

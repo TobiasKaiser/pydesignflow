@@ -1,11 +1,24 @@
 import shutil
 import tabulate
+import re
 
 from .result import Result
 from .errors import FlowError, ResultRequired
 from .target import TargetId
 
 tabulate.PRESERVE_WHITESPACE = True
+
+def compact_docstr(docstr: str, maxlen=30, ellipsis="...") -> str:
+    """
+    Removes newlines and indentation from docstring and cuts off excess text
+    if maxlen characters are exceeded.
+    """
+    if not docstr:
+        return ""
+    docstr = re.sub("[ \t\n]+", " ", docstr)
+    if len(docstr) > maxlen:
+        docstr = docstr[:maxlen-len(ellipsis)] + ellipsis
+    return docstr
 
 class BuildSession:
 
@@ -142,7 +155,7 @@ class BuildSession:
 
     def status_block(self, block_id:str):
         block = self.flow[block_id]
-        yield [block_id, "", block.__doc__]
+        yield [block_id, "", compact_docstr(block.__doc__)]
         for task_id in block.tasks:
             tid = TargetId(block_id, task_id)
             target = self.flow.target(tid)
@@ -155,12 +168,8 @@ class BuildSession:
                     status="dir without result -> running or failed"
                 else:
                     status="not found"
-            yield [f"  {task_id}",  status, target.__doc__]
-
-    def format_status(self, status_list):
-        table = [["Target", "Status", "Help"]]
-        return tabulate.tabulate(status_list, headers="firstrow", tablefmt="simple")
-
+            yield [f"  {task_id}",  status, compact_docstr(target.__doc__)]
+        
     def status(self, block_id:str=None) -> str:
         """
         Args:
@@ -173,4 +182,7 @@ class BuildSession:
             status_list = []
             for block_id in self.flow:
                 status_list += list(self.status_block(block_id))
-        return self.format_status(status_list)
+        
+        header = [["Target", "Status", "Help"]]
+        table = header + status_list        
+        return tabulate.tabulate(table, headers="firstrow", tablefmt="simple")
