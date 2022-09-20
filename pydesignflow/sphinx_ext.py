@@ -37,12 +37,12 @@ class DesignflowDirective(Directive):
         signode = addnodes.desc_signature(sig, '')
         node.append(signode)
         if target.always_rebuild:
-            signode.append(addnodes.desc_sig_keyword("", "always_rebuild"))
-            signode.append(addnodes.desc_sig_space())
-        signode.append(addnodes.desc_sig_keyword("target", "target"))
-        signode.append(addnodes.desc_sig_space())
+            signode.append(addnodes.desc_type("", "always_rebuild"))
+            signode.append(nodes.Text(" ", " "))
+        signode.append(addnodes.desc_type("target", "target"))
+        signode.append(nodes.Text(" ", " "))
         signode += addnodes.desc_addname(block_id, block_id)
-        signode += addnodes.desc_sig_punctuation('.', '.')
+        signode += nodes.Text(".", ".")
         signode += addnodes.desc_name(sig, sig)
 
         
@@ -94,10 +94,10 @@ class DesignflowDirective(Directive):
 
         signode = addnodes.desc_signature(sig, '')
         node.append(signode)
-        signode.append(addnodes.desc_sig_keyword("block", "block"))
-        signode.append(addnodes.desc_sig_space())
+        signode.append(addnodes.desc_type("block", "block"))
+        signode.append(nodes.Text(" ", " "))
         signode += addnodes.desc_name(sig, sig)
-        signode.append(addnodes.desc_sig_space())
+        signode.append(nodes.Text(" ", " "))
         signode.append(addnodes.desc_annotation(f"(instance of {type(block).__name__})"))
         
         contentnode = addnodes.desc_content()
