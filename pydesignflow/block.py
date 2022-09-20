@@ -27,9 +27,19 @@ class Block():
         self.id = block_id
         self.flow = flow
         self._registered = True
-        if hasattr(self, "setup"):
-            warn('Providing a setup() method is deprecated.', DeprecationWarning, stacklevel=3)
-            self.setup()
+        self.setup()
+
+    def setup(self):
+        """
+        Subclasses should override this method to perform setup steps.
+    
+        Setup is performed during Flow creation, before any targets are
+        executed but after the Flow objects registers the Block object.
+        This means that, in contrast to __init__, the setup method can access
+        the the .flow object, e.g. to read self.flow.base_dir.
+        """
+        pass
+
 
     def auto_register_tasks(self):
         """
