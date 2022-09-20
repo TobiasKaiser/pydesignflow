@@ -1,5 +1,6 @@
 from .errors import FlowError
 from .target import TargetPrototype
+from warnings import warn
 
 class Block():
     def __init__(self, dependency_map={}):
@@ -26,14 +27,9 @@ class Block():
         self.id = block_id
         self.flow = flow
         self._registered = True
-        self.setup()
-
-    def setup(self):
-        """
-        Override this method in subclasses to provide setup functionality.
-        """
-        pass
-
+        if hasattr(self, "setup"):
+            warn('Providing a setup() method is deprecated.', DeprecationWarning, stacklevel=3)
+            self.setup()
 
     def auto_register_tasks(self):
         """
