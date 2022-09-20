@@ -2,6 +2,7 @@ import importlib
 from pathlib import Path
 import sys
 import os
+import warnings
 
 def import_flow_addpath():
     if not Path(Path.cwd() / "flow" / "__init__.py").exists():
@@ -25,6 +26,8 @@ They should both do roughly the same.
 
 
 def main():
+    warnings.simplefilter('always', DeprecationWarning)
+
     try:
         flow = import_flow()
     except FileNotFoundError:

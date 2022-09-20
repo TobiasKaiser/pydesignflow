@@ -1,3 +1,5 @@
+from warnings import warn
+
 from .target import TargetPrototype
 
 def task(requires:dict[str,str]={}, always_rebuild=False):
@@ -21,3 +23,7 @@ def task(requires:dict[str,str]={}, always_rebuild=False):
         requires=requires,
         always_rebuild=always_rebuild,
     )
+
+def action(*args, **kwargs):
+    warn('Use @task instead of @action.', DeprecationWarning, stacklevel=2)
+    return task(*args, **kwargs)
