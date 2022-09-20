@@ -8,7 +8,7 @@ from .target import TargetId
 
 tabulate.PRESERVE_WHITESPACE = True
 
-def compact_docstr(docstr: str, maxlen=30, ellipsis="...") -> str:
+def compact_docstr(docstr: str, maxlen=40, ellipsis="...") -> str:
     """
     Removes newlines and indentation from docstring and cuts off excess text
     if maxlen characters are exceeded.
@@ -16,6 +16,7 @@ def compact_docstr(docstr: str, maxlen=30, ellipsis="...") -> str:
     if not docstr:
         return ""
     docstr = re.sub("[ \t\n]+", " ", docstr)
+    docstr = docstr.strip() # Remove leading and trailing spaces.
     if len(docstr) > maxlen:
         docstr = docstr[:maxlen-len(ellipsis)] + ellipsis
     return docstr
@@ -168,7 +169,7 @@ class BuildSession:
                     status="dir without result -> running or failed"
                 else:
                     status="not found"
-            yield [f"  {task_id}",  status, compact_docstr(target.__doc__)]
+            yield [f"  .{task_id}",  status, compact_docstr(target.__doc__)]
         
     def status(self, block_id:str=None) -> str:
         """
