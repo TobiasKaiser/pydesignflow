@@ -18,3 +18,4 @@ What is tested?
 Todo:
 
 - CLI
+- Test Result object behavior

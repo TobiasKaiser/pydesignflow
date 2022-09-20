@@ -13,7 +13,7 @@ class Result:
 
     def check_value(self, value):
         if isinstance(value, (list, tuple)):
-            for elem in list:
+            for elem in value:
                 self.check_value(elem)
         elif isinstance(value, dict):
             for k, v in value.items():
