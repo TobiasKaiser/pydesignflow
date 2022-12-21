@@ -23,9 +23,9 @@ class CLI:
         parser.add_argument("--build-dir", "-B", default=default_build_dir,
             help="Build directory")
         parser.add_argument("--no-dependencies", "-N", action="store_true",
-            help="Do not build missing requirements.")
-        parser.add_argument("--rebuild-requirements", "-R", action="store_true",
-            help="Re-build all requirements, even if flow results were found.")
+            help="Do not build missing dependencies.")
+        parser.add_argument("--rebuild-dependencies", "-R", action="store_true",
+            help="Re-build all dependencies, even if flow results were found.")
         parser.add_argument("--dry-run", "-d", action="store_true",
             help="Print but do not run build plan.")
         parser.add_argument("--clean", "-c", action="store_true",
@@ -42,11 +42,11 @@ class CLI:
 
         self.args = self.create_parser(prog).parse_args(args)
 
-        self.build_requirements = "missing"
-        if self.args.rebuild_requirements:
-            self.build_requirements = "all"
+        self.build_dependencies = "missing"
+        if self.args.rebuild_dependencies:
+            self.build_dependencies = "all"
         elif self.args.no_dependencies:
-            self.build_requirements = None
+            self.build_dependencies = None
 
         self.sess = self.flow.session_at(self.args.build_dir)
 
@@ -62,7 +62,7 @@ class CLI:
             p = self.sess.plan(
                 block_id=self.args.block,
                 task_id=self.args.task,
-                build_requirements=self.build_requirements
+                build_dependencies=self.build_dependencies
             )
         except ResultRequired as r:
             print(r)
@@ -75,7 +75,7 @@ class CLI:
         if self.args.no_dependencies:
             print("--no-dependencies requires block and task")
             sys.exit(1)
-        if self.args.rebuild_requirements:
-            print("--rebuild-requirements requires block and task")
+        if self.args.rebuild_dependencies:
+            print("--rebuild-dependencies requires block and task")
             sys.exit(1)
         print(self.sess.status(block_id=self.args.block))

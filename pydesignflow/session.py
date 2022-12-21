@@ -63,18 +63,18 @@ class BuildSession:
         self.results = None # (block_id, task_id) -> Result map
         self.reload_results()
 
-    def plan(self, block_id, task_id, build_requirements:Literal[None, 'missing', 'all']=None) -> BuildPlan:
+    def plan(self, block_id, task_id, build_dependencies:Literal[None, 'missing', 'all']=None) -> BuildPlan:
         """
         Args:
-            build_requirements: None, "missing" or "all"
+            build_dependencies: None, "missing" or "all"
         """
-        assert build_requirements in (None, "missing", "all")
+        assert build_dependencies in (None, "missing", "all")
         requested_tid = TargetId(block_id, task_id)
-        rebuild = (build_requirements == "all")
+        rebuild = (build_dependencies == "all")
         target_list = self._dependency_list(requested_tid, rebuild)
         plan = BuildPlan(self, requested_tid, target_list)
         missing = plan.missing_targets()
-        if (not build_requirements) and len(missing) > 0:
+        if (not build_dependencies) and len(missing) > 0:
             raise ResultRequired(missing[0])
         return plan
 
@@ -184,5 +184,5 @@ class BuildSession:
                 status_list += list(self.status_block(block_id))
         
         header = [["Target", "Status", "Help"]]
-        table = header + status_list        
+        table = header + status_list
         return tabulate.tabulate(table, headers="firstrow", tablefmt="simple")
