@@ -9,4 +9,5 @@ class ANSITerm:
     FgMagenta = "\x1b[35m"
     FgCyan = "\x1b[36m"
     FgWhite = "\x1b[37m"
+    Inverse = "\x1b[7m"
     Reset = "\x1b[0m"

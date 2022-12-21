@@ -37,6 +37,9 @@ class CLI:
 
         self.args = self.create_parser(prog).parse_args(args)
 
+        if self.args.block and ('.' in self.args.block):
+            self.args.block, self.args.task = self.args.block.split('.', 1)
+
         self.build_dependencies = "missing"
         if self.args.rebuild_dependencies:
             self.build_dependencies = "all"
