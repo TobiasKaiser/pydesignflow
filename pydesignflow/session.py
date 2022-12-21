@@ -6,6 +6,7 @@ from typing import Literal
 from .result import Result
 from .errors import FlowError, ResultRequired
 from .target import TargetId
+from .ansiterm import ANSITerm
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -47,12 +48,14 @@ class BuildPlan:
         status_list = [f" ‣ {tid.block_id}.{tid.task_id}" for tid in self.target_sequence] 
         return "\n".join(status_list)
 
-    def run(self, style="", style_reset=""):
+    def run(self):
+        style = ANSITerm.FgBrightBlue
+        reset = ANSITerm.Reset
         for tid in self.target_sequence:
-            print(f"{style}[PyDesignFlow]{style_reset} Running target {tid.block_id}.{tid.task_id}.")
+            print(f"{style}[PyDesignFlow]{reset} Running target {tid.block_id}.{tid.task_id}.")
             target = self.sess.flow.target(tid)
             target.run(self.sess)
-            print(f"{style}[PyDesignFlow]{style_reset} Finished target {tid.block_id}.{tid.task_id}.")
+            print(f"{style}[PyDesignFlow]{reset} Finished target {tid.block_id}.{tid.task_id}.")
 
 
 class BuildSession:
@@ -155,19 +158,22 @@ class BuildSession:
 
     def status_block(self, block_id:str):
         block = self.flow[block_id]
-        yield [block_id, "", compact_docstr(block.__doc__)]
+        yield [ANSITerm.FgBlue+block_id+ANSITerm.Reset, "",
+            ANSITerm.FgBlue+compact_docstr(block.__doc__)+ANSITerm.Reset]
         for task_id in block.tasks:
             tid = TargetId(block_id, task_id)
             target = self.flow.target(tid)
             if tid in self.results:
                 res=self.get_result(tid)
                 status=res.summary()
+                status = ANSITerm.FgGreen + status + ANSITerm.Reset
             else:
                 expected_dir = self.build_dir / block_id / task_id
                 if expected_dir.exists():
                     status="dir without result -> running or failed"
                 else:
                     status="not found"
+                status = ANSITerm.FgRed + status + ANSITerm.Reset
             yield [f"  .{task_id}",  status, compact_docstr(target.__doc__)]
         
     def status(self, block_id:str=None) -> str:

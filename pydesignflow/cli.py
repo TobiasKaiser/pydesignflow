@@ -3,12 +3,7 @@ import argparse
 from pathlib import Path
 from .result import Result
 from .errors import FlowError, ResultRequired
-
-class ANSITerm:
-    FgBrightBlue = "\x1b[94m"
-    BgBlue = "\x1b[44m"
-    Reset = "\x1b[0m"
-
+from .ansiterm import ANSITerm
 class CLI:
     def __init__(self, flow):
         self.flow = flow
@@ -69,7 +64,7 @@ class CLI:
         else:
             print(f"{ANSITerm.FgBrightBlue}PyDesignFlow Build Plan:{ANSITerm.Reset}\n{p}\n")
             if not self.args.dry_run:
-                p.run(style=ANSITerm.FgBrightBlue, style_reset=ANSITerm.Reset)
+                p.run()
 
     def print_status(self):
         if self.args.no_dependencies:
