@@ -2,6 +2,12 @@ import sys
 import argparse
 from pathlib import Path
 from .result import Result
+from .errors import FlowError, ResultRequired
+
+class ANSITerm:
+    FgBrightBlue = "\x1b[94m"
+    BgBlue = "\x1b[44m"
+    Reset = "\x1b[0m"
 
 class CLI:
     def __init__(self, flow):
@@ -16,10 +22,12 @@ class CLI:
         default_build_dir = Path.cwd() / "build"
         parser.add_argument("--build-dir", "-B", default=default_build_dir,
             help="Build directory")
-        parser.add_argument("--build-missing-requirements", "-r", action="store_true",
-            help="In addition to specified task, build missing requirements.")
+        parser.add_argument("--no-dependencies", "-N", action="store_true",
+            help="Do not build missing requirements.")
         parser.add_argument("--rebuild-requirements", "-R", action="store_true",
             help="Re-build all requirements, even if flow results were found.")
+        parser.add_argument("--dry-run", "-d", action="store_true",
+            help="Print but do not run build plan.")
         parser.add_argument("--clean", "-c", action="store_true",
             help="Remove flow results.")
         parser.add_argument("block", nargs='?')
@@ -33,6 +41,13 @@ class CLI:
             sys.exit(1)
 
         self.args = self.create_parser(prog).parse_args(args)
+
+        self.build_requirements = "missing"
+        if self.args.rebuild_requirements:
+            self.build_requirements = "all"
+        elif self.args.no_dependencies:
+            self.build_requirements = None
+
         self.sess = self.flow.session_at(self.args.build_dir)
 
         if self.args.clean:
@@ -43,21 +58,22 @@ class CLI:
             self.print_status()
 
     def build(self):
-        build_requirements = None
-        if self.args.rebuild_requirements:
-            build_requirements = "all"
-        elif self.args.build_missing_requirements:
-            build_requirements = "missing"
-        self.sess.run(
-            block_id=self.args.block,
-            task_id=self.args.task,
-            build_requirements=build_requirements,
-            verbose=True
-        )
+        try:
+            p = self.sess.plan(
+                block_id=self.args.block,
+                task_id=self.args.task,
+                build_requirements=self.build_requirements
+            )
+        except ResultRequired as r:
+            print(r)
+        else:
+            print(f"{ANSITerm.FgBrightBlue}PyDesignFlow Build Plan:{ANSITerm.Reset}\n{p}\n")
+            if not self.args.dry_run:
+                p.run(style=ANSITerm.FgBrightBlue, style_reset=ANSITerm.Reset)
 
     def print_status(self):
-        if self.args.build_missing_requirements:
-            print("--build-missing-requirements requires block and task")
+        if self.args.no_dependencies:
+            print("--no-dependencies requires block and task")
             sys.exit(1)
         if self.args.rebuild_requirements:
             print("--rebuild-requirements requires block and task")

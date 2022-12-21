@@ -43,21 +43,16 @@ class BuildPlan:
 
         return list(filter(is_missing, self.target_sequence))
 
-    def print(self):
-        print("Planned execution:")
-        table = [['Idx', 'Block', 'Task']]
-        for idx, dep in enumerate(self.target_sequence):
-            table.append([idx, dep.block_id, dep.task_id])
-        print(tabulate.tabulate(table, headers="firstrow", tablefmt="simple"))
-        print()
+    def __repr__(self):
+        status_list = [f" ‣ {tid.block_id}.{tid.task_id}" for tid in self.target_sequence] 
+        return "\n".join(status_list)
 
-    def run(self):
+    def run(self, style="", style_reset=""):
         for tid in self.target_sequence:
-            print(f"Running target {tid.block_id}.{tid.task_id}.")
+            print(f"{style}[PyDesignFlow]{style_reset} Running target {tid.block_id}.{tid.task_id}.")
             target = self.sess.flow.target(tid)
             target.run(self.sess)
-            print(f"Target {tid.block_id}.{tid.task_id} completed.")
-            print()
+            print(f"{style}[PyDesignFlow]{style_reset} Finished target {tid.block_id}.{tid.task_id}.")
 
 
 class BuildSession:

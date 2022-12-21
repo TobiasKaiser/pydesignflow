@@ -7,4 +7,4 @@ class ResultRequired(FlowError):
         self.target_id = target_id
 
     def __str__(self):
-        return f"Result required, but not present: {self.target_id}"
+        return f"Result of target {self.target_id.block_id}.{self.target_id.task_id} is missing."
