@@ -93,7 +93,7 @@ def test_a1_b1(tmp_path):
     ]
 
     for block_id, task_id in plan:
-        sess.run_target(block_id, task_id)
+        sess.plan(block_id, task_id).run()
         assert (sess.build_dir / block_id / task_id / 'result.json').exists()
     
     res = sess.get_result(TargetId('B1', 'stepZ')).my_key
@@ -109,7 +109,7 @@ def test_a1_c1(tmp_path):
     ]
 
     for block_id, task_id in plan:
-        sess.run_target(block_id, task_id)
+        sess.plan(block_id, task_id).run()
         assert (sess.build_dir / block_id / task_id / 'result.json').exists()
     
     res = sess.get_result(TargetId('C1', 'stepZ')).my_key
@@ -128,7 +128,7 @@ def test_d_e(tmp_path):
     ]
 
     for block_id, task_id in plan:
-        sess.run_target(block_id, task_id)
+        sess.plan(block_id, task_id).run()
         assert (sess.build_dir / block_id / task_id / 'result.json').exists()
     
     res = sess.get_result(TargetId('E1', 'stepY')).my_key

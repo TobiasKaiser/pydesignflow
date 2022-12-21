@@ -8,20 +8,20 @@ def get_flow_session(build_dir):
 def test_step1_creates_result(tmp_path):
     sess = get_flow_session(tmp_path)
     task_id = 'step1'
-    sess.run_target('top', task_id)
+    sess.plan('top', task_id).run()
     assert (sess.build_dir / 'top' / task_id / 'result.json').exists()
 
 def test_step_without_result(tmp_path):
     sess = get_flow_session(tmp_path)
     task_id = 'step_without_result'
-    sess.run_target('top', task_id)
+    sess.plan('top', task_id).run()
     # In an earlier version, tasks without a result would not create a result.json file.
     assert (sess.build_dir / 'top' / task_id / 'result.json').exists()
 
 def test_step1_step2(tmp_path):
     sess = get_flow_session(tmp_path)
-    sess.run_target('top', 'step1')
-    sess.run_target('top', 'step2')
+    sess.plan('top', 'step1').run()
+    sess.plan('top', 'step2').run()
     assert (sess.build_dir / 'top' / 'step1' / 'result.json').exists()
     assert (sess.build_dir / 'top' / 'step2' / 'result.json').exists()
 
@@ -29,14 +29,14 @@ def test_step123(tmp_path):
     sess = get_flow_session(tmp_path)
     for i in range(1, 1+3):
         task_id = f'step{i}'
-        sess.run_target('top', task_id)
+        sess.plan('top', task_id).run()
         assert (sess.build_dir / 'top' / task_id / 'result.json').exists()
     
 def test_run_all(tmp_path):
     sess = get_flow_session(tmp_path)
     for i in range(1, 1+10):
         task_id = f'step{i}'
-        sess.run_target('top', task_id)
+        sess.plan('top', task_id).run()
         assert (sess.build_dir / 'top' / task_id / 'result.json').exists()
     
     res3_expect = "step3 res (step2 res (step1 res))"
@@ -50,5 +50,5 @@ def test_run_all(tmp_path):
 def test_missing_require(tmp_path):
     sess = get_flow_session(tmp_path)
     with pytest.raises(ResultRequired) as e:
-        sess.run_target('top', 'step2')
+        sess.plan('top', 'step2').run()
     assert e.value.target_id == TargetId('top', 'step1')
