@@ -6,10 +6,12 @@ from pathlib import Path
 from .session import BuildSession
 from .cli import CLI
 from .target import TargetId, Target
+import subprocess
 
 class Flow:
-    def __init__(self):
+    def __init__(self, hide_subprocess_errors=True):
         self.blocks = {}
+        self.hide_subprocess_errors = hide_subprocess_errors
 
     def __iter__(self):
         return iter(self.blocks)
@@ -43,7 +45,14 @@ class Flow:
             args: List of command line arguments, e.g. argv[1:]
             prog: Name of executable, e.g. argv[0]
         """
-        CLI(self).main(args, prog)
+
+        try:
+            CLI(self).main(args, prog)
+        except subprocess.CalledProcessError as e:
+            if self.hide_subprocess_errors:
+                print(f"Subprocess {e.cmd[0]} exited with return code {e.returncode}.")
+            else:
+                raise
 
     def target(self, result_id: TargetId) -> Target:
         return self[result_id.block_id].tasks[result_id.task_id]
