@@ -170,10 +170,10 @@ class BuildSession:
             else:
                 expected_dir = self.build_dir / block_id / task_id
                 if expected_dir.exists():
-                    status="dir without result -> running or failed"
+                    status =  ANSITerm.FgYellow + "incomplete" + ANSITerm.Reset
                 else:
-                    status="not found"
-                status = ANSITerm.FgRed + status + ANSITerm.Reset
+                    status = ""
+                    #status = ANSITerm.FgRed + "not found" + ANSITerm.Reset
             yield [f"  .{task_id}",  status, compact_docstr(target.__doc__)]
         
     def status(self, block_id:str=None) -> str:
