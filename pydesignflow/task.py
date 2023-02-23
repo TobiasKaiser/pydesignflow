@@ -2,7 +2,7 @@ from warnings import warn
 
 from .target import TargetPrototype
 
-def task(requires:dict[str,str]={}, always_rebuild=False):
+def task(requires:dict[str,str]={}, always_rebuild=False, hidden=False):
     """
     In a previous versin, task was known as action.
 
@@ -22,6 +22,7 @@ def task(requires:dict[str,str]={}, always_rebuild=False):
         func=func,
         requires=requires,
         always_rebuild=always_rebuild,
+        hidden=hidden,
     )
 
 def action(*args, **kwargs):

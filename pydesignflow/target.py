@@ -38,25 +38,27 @@ class TargetPrototype:
     This is only a problem if there are multiple instances of the same Target
     e.g. due to multiple instances of a block.
     """
-    def __init__(self, func, requires, always_rebuild):
+    def __init__(self, func, requires, always_rebuild, hidden):
         self.func = func
         self.requires = requires
         self.always_rebuild = always_rebuild
+        self.hidden = hidden
 
     def create(self):
-        return Target(self.func, self.requires, self.always_rebuild)
+        return Target(self.func, self.requires, self.always_rebuild, self.hidden)
 
 class Target:
     @property
     def __doc__(self):
         return self.func.__doc__
 
-    def __init__(self, func, requires, always_rebuild):
+    def __init__(self, func, requires, always_rebuild, hidden):
         self.func = func
         self.requires = requires
         self.block = None
         self.id = None
         self.always_rebuild = always_rebuild
+        self.hidden = hidden
         self._registered = False
 
     def register(self, block, task_id):

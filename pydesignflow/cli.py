@@ -27,6 +27,8 @@ class CLI:
             help="Print but do not run build plan.")
         parser.add_argument("--clean", "-c", action="store_true",
             help="Remove flow results.")
+        parser.add_argument("--hidden", "-a", action="store_true",
+            help="Show hidden target.")
         parser.add_argument("block", nargs='?')
         parser.add_argument("task", nargs='?')
 
@@ -87,4 +89,6 @@ class CLI:
         if self.args.rebuild_dependencies:
             print("--rebuild-dependencies requires block and task")
             sys.exit(1)
-        print(self.sess.status(block_id=self.args.block))
+        if self.args.block:
+            self.args.hidden = True
+        print(self.sess.status(block_id=self.args.block, show_hidden=self.args.hidden))
