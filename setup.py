@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="pydesignflow",
-    version="0.3.0",
+    version="0.3.1",
     author="Tobias Kaiser",
     author_email="mail@tb-kaiser.de",
     description="Micro-Framework for FPGA / VLSI Design Flow in Python",
