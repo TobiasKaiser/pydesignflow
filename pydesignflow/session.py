@@ -117,7 +117,7 @@ class BuildSession:
         assert loaded_task_id == task_id
         assert loaded_block_id == block_id
 
-        self.results[(block_id, task_id)] = loaded_result
+        self.results[TargetId(block_id, task_id)] = loaded_result
 
     def reload_results(self):
         self.results = {}

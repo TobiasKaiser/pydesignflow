@@ -4,6 +4,8 @@ from pathlib import Path
 from .result import Result
 from .errors import FlowError, ResultRequired
 from .ansiterm import ANSITerm
+from .target import TargetId
+
 class CLI:
     def __init__(self, flow):
         self.flow = flow
@@ -32,12 +34,13 @@ class CLI:
 
     def main(self, args: list[str], prog: str):
         if len(self.flow.blocks) < 1:
-            print("No blocks defined. Please define at least one block.")
-            sys.exit(1)
+            raise SystemExit("No blocks defined. Please define at least one block.")
 
         self.args = self.create_parser(prog).parse_args(args)
 
         if self.args.block and ('.' in self.args.block):
+            if self.args.task != None:
+                raise SystemExit("Too many arguments.")
             self.args.block, self.args.task = self.args.block.split('.', 1)
 
         self.build_dependencies = "missing"
@@ -47,6 +50,14 @@ class CLI:
             self.build_dependencies = None
 
         self.sess = self.flow.session_at(self.args.build_dir)
+
+        if self.args.block and not self.flow.has_block(self.args.block):
+            raise SystemExit(f"Block '{self.args.block}' not found.")
+
+        tid = TargetId(self.args.block, self.args.task)
+        if self.args.task and not self.flow.has_target(tid):
+            raise SystemExit(f"Target '{tid}' not found.")
+
 
         if self.args.clean:
             self.sess.clean(self.args.block, self.args.task)

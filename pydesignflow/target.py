@@ -2,12 +2,18 @@ import re
 import shutil
 from pathlib import Path
 from datetime import datetime
-from collections import namedtuple
+from dataclasses import dataclass
 
 from .errors import FlowError
 from .result import Result
 
-TargetId = namedtuple('TargetId', ('block_id', 'task_id'))
+@dataclass(frozen=True, eq=True)
+class TargetId:
+    block_id: str
+    task_id: str
+
+    def __str__(self):
+        return f"{self.block_id}.{self.task_id}"
 
 def parse_requirement_spec(spec):
     m = re.match(r"((=)?([a-zA-Z0-9_]+))?\.([a-zA-Z0-9_]+)", spec)

@@ -54,5 +54,13 @@ class Flow:
             else:
                 raise
 
-    def target(self, result_id: TargetId) -> Target:
-        return self[result_id.block_id].tasks[result_id.task_id]
+    def target(self, tid: TargetId) -> Target:
+        return self.blocks[tid.block_id].tasks[tid.task_id]
+
+    def has_target(self, tid: TargetId) -> bool:
+        if not self.has_block(tid.block_id):
+            return False
+        return tid.task_id in self.blocks[tid.block_id].tasks
+
+    def has_block(self, block_id: str) -> bool:
+        return block_id in self.blocks
