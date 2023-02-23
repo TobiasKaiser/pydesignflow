@@ -125,7 +125,7 @@ class BuildSession:
             with open(fn, "r") as f:
                 json_str = f.read()
             block_id, task_id, res = Result.from_json(self, json_str)
-            self.results[(block_id, task_id)] = res
+            self.results[TargetId(block_id, task_id)] = res
 
     def get_result(self, result_id):
         try:
