@@ -92,7 +92,7 @@ class Result:
             duration_str = f"{int(duration_sec//60)}m"
         else:
             duration_str = f"{duration_sec%60}s"
-        r=f"finished {finished_str} in {duration_str}"
+        r=f"✓ {finished_str} in {duration_str}"
         #if not self.returned_data:
         #    r+=" (w/o data)"
         return r
