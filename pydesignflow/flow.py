@@ -50,7 +50,7 @@ class Flow:
             CLI(self).main(args, prog)
         except subprocess.CalledProcessError as e:
             if self.hide_subprocess_errors:
-                print(f"Subprocess {e.cmd[0]} exited with return code {e.returncode}.")
+                raise SystemExit(f"Subprocess {e.cmd[0]} exited with return code {e.returncode}.")
             else:
                 raise
 

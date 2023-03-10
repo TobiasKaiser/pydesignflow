@@ -16,7 +16,7 @@ class CLI:
             prog=prog,
         )
 
-        default_build_dir = Path.cwd() / "build"
+        default_build_dir = str(Path.cwd() / "build")
         parser.add_argument("--build-dir", "-B", default=default_build_dir,
             help="Build directory")
         parser.add_argument("--no-dependencies", "-N", action="store_true",
@@ -51,7 +51,7 @@ class CLI:
         elif self.args.no_dependencies:
             self.build_dependencies = None
 
-        self.sess = self.flow.session_at(self.args.build_dir)
+        self.sess = self.flow.session_at(Path(self.args.build_dir))
 
         if self.args.block and not self.flow.has_block(self.args.block):
             raise SystemExit(f"Block '{self.args.block}' not found.")
