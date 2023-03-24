@@ -156,19 +156,22 @@ class BuildSession:
             shutil.rmtree(self.build_dir, ignore_errors=True)
         self.reload_results()
 
-    def status_block(self, block_id:str, show_hidden:bool):
+    def status_block(self, block_id:str, show_hidden:bool=True, show_targets:bool=False):
         block = self.flow[block_id]
-        first = True
+        yield [ANSITerm.FgBlue+block_id+ANSITerm.Reset, "",
+            ANSITerm.FgBlue+compact_docstr(block.__doc__)+ANSITerm.Reset]
         for task_id, task in block.tasks.items():
             tid = TargetId(block_id, task_id)
             target = self.flow.target(tid)
             if tid in self.results:
                 if (not show_hidden) and task.hidden and task.always_rebuild:
-                    continue    
+                    continue
                 res=self.get_result(tid)
                 status=res.summary()
                 status = ANSITerm.FgGreen + status + ANSITerm.Reset
             else:
+                if not show_targets:
+                    continue
                 expected_dir = self.build_dir / block_id / task_id
                 if expected_dir.exists():
                     status =  ANSITerm.FgYellow + "incomplete" + ANSITerm.Reset
@@ -177,10 +180,6 @@ class BuildSession:
                         continue
                     status = ""
                     #status = ANSITerm.FgRed + "not found" + ANSITerm.Reset
-            if first:
-                yield [ANSITerm.FgBlue+block_id+ANSITerm.Reset, "",
-                    ANSITerm.FgBlue+compact_docstr(block.__doc__)+ANSITerm.Reset]
-                first = False
             yield [f"  .{task_id}",  status, compact_docstr(target.__doc__)]
         
     def status(self, block_id:str, show_hidden:bool) -> str:
@@ -190,11 +189,11 @@ class BuildSession:
                 None, status of all blocks will be listed.
         """
         if block_id:
-            status_list = list(self.status_block(block_id, show_hidden))
+            status_list = list(self.status_block(block_id, show_hidden=True, show_targets=True))
         else:
             status_list = []
             for block_id in self.flow:
-                status_list += list(self.status_block(block_id, show_hidden))
+                status_list += list(self.status_block(block_id, show_targets=show_hidden, show_hidden=False))
         
         header = [["Target", "Status", "Help"]]
         table = header + status_list
