@@ -3,7 +3,11 @@ Todo
 
 - Document & integrate pydesignflow.filemgmt.
 - Document & integrate pydesignflow.libset.
-- Add pickle support to Result / json.
+- Result / json format.
+  
+  - Integers are currently not supported.
+  - Add pickle support?
+
 - Document security implications of pickle support in Result / json.
 - Document LibrarySet
 - Automatically generate flow documentation
