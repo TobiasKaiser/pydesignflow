@@ -1,19 +1,12 @@
 Todo
 ====
 
-- Document & integrate pydesignflow.filemgmt.
-- Document & integrate pydesignflow.libset.
-- Result / json format.
-  
-  - Integers are currently not supported.
-  - Add pickle support?
+Non-Critical Bugs:
 
-- Document security implications of pickle support in Result / json.
-- Document LibrarySet
-- Automatically generate flow documentation
-- :ref:`tests`
-- :ref:`sphinx_ext`
-  
-  - add domain for pydesignflow + support cross-references
+- Document: :ref:`tests`
+- Document: :ref:`design_decisions`
 
-- :ref:`design_decisions`
+Feature requests:
+
+- :ref:`sphinx_ext`: add domain for pydesignflow + support cross-references\
+- Result / json format: Add pickle support + document security implications.

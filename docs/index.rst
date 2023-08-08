@@ -14,9 +14,9 @@ Welcome to PyDesignFlow's documentation!
    reference
    design_decisions
    sphinx_ext
+   filemgmt
    tests/index
    todo
-
 
 Indices and tables
 ==================

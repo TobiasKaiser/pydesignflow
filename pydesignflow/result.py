@@ -5,7 +5,7 @@ from datetime import datetime
 
 class Result:
     supported_scalar_types = (
-        Path, str, bool, float, datetime
+        str, bool, int, float, Path, datetime
     )
 
     def __init__(self):

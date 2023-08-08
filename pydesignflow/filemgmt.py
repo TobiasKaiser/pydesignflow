@@ -10,6 +10,9 @@ class FileManagementError(Exception):
     pass
 
 def checkfile(path: Path) -> Path:
+    """
+    Convenience function: check that path exists and is a file, then return path.
+    """
     if not path.exists():
         raise FileManagementError(f"Path '{path}' does not exist.")
     if not path.is_file():
@@ -17,6 +20,9 @@ def checkfile(path: Path) -> Path:
     return path
 
 def checkdir(path: Path) -> Path:
+    """
+    Convenience function: check that path exists and is a directory, then return path.
+    """
     if not path.exists():
         raise FileManagementError(f"Path '{path}' does not exist.")
     if not path.is_dir():
@@ -90,9 +96,9 @@ class FileCollection:
 
     def one(self, missing_key_deselects: bool = False, **filters: dict[str, object]):
         """
-        Returns element that matches **filters.
+        Returns element that matches filters.
 
-        Raises FileManagementError if **filters are ambiguous (multiple matches) or when no match is found.
+        Raises FileManagementError if filters are ambiguous (multiple matches) or when no match is found.
         """
         res = self.filter(missing_key_deselects=missing_key_deselects, **filters)
         if len(res) < 1:
@@ -109,7 +115,21 @@ class FileCollection:
         return self.one(*args, **kwargs)
 
     @classmethod
-    def frompattern(cls, dir, pattern, decoder):
+    def frompattern(cls, dir: Path, pattern: str, decoder):
+        """
+        Create FileCollection using pattern and decoder function.
+
+        Args:
+            dir: Directory (Path) in which to locate files.
+            pattern: Regular expression (Python's re module) for finding
+                desired files.
+            decoder: Decoder function, receives first regular expression
+                group string as argument, returns dictionary of file
+                attributes.
+
+        Returns:
+            new FileCollection object
+        """
         coll = cls()
 
         for fn in dir.iterdir():

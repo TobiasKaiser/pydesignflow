@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath("../"))
 # -- Project information -----------------------------------------------------
 
 project = 'PyDesignFlow'
-copyright = '2022, Tobias Kaiser'
+copyright = '2022 - 2023, Tobias Kaiser'
 author = 'Tobias Kaiser'
 
 # The full version, including alpha/beta/rc tags
