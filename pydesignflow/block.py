@@ -48,7 +48,14 @@ class Block():
         Alternately, a similar automatic detection can be implemented using a
         metaclass and __prepare__.
         """
+        ordered_keys = list(type(self).__dict__.keys())
+        # This does not cover type(self).__dict__ does not cover everything,
+        # so if there are missing keys, add them at the end of the list:
         for key in dir(self):
+            if key not in ordered_keys:
+                ordered_keys.append(key)
+
+        for key in ordered_keys:
             val = getattr(self, key)
             if isinstance(val, TargetPrototype):
                 # Bidirectional reference:
