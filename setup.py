@@ -1,8 +1,10 @@
 import setuptools
 
+exec(open('pydesignflow/version.py').read()) # --> __version__
+
 setuptools.setup(
     name="pydesignflow",
-    version="0.3.2",
+    version=__version__,
     author="Tobias Kaiser",
     author_email="mail@tb-kaiser.de",
     description="Micro-Framework for FPGA / VLSI Design Flow in Python",

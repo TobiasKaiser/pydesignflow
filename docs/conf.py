@@ -23,7 +23,8 @@ copyright = '2022 - 2023, Tobias Kaiser'
 author = 'Tobias Kaiser'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+import pydesignflow
+release = pydesignflow.__version__
 
 
 # -- General configuration ---------------------------------------------------

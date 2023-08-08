@@ -1,3 +1,5 @@
+from .version import __version__
+
 from .block import Block
 from .target import TargetId
 from .task import task, action
