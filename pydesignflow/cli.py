@@ -5,6 +5,7 @@ from .result import Result
 from .errors import FlowError, ResultRequired
 from .ansiterm import ANSITerm
 from .target import TargetId
+from .monitor import monitor
 
 class CLI:
     def __init__(self, flow):
@@ -27,6 +28,8 @@ class CLI:
             help="Print but do not run build plan.")
         parser.add_argument("--clean", "-c", action="store_true",
             help="Remove flow results.")
+        parser.add_argument("--monitor", "-M", action="store_true",
+            help="Continuously monitor build directory for changes. A message is printed whenever a new target build is started or finished.")
         parser.add_argument("--hidden", "-a", action="store_true",
             help="Show hidden target.")
         parser.add_argument("block", nargs='?')
@@ -40,7 +43,7 @@ class CLI:
 
         self.args = self.create_parser(prog).parse_args(args)
 
-        if self.args.block and ('.' in self.args.block):
+        if self.args.block != None and ('.' in self.args.block):
             if self.args.task != None:
                 raise SystemExit("Too many arguments.")
             self.args.block, self.args.task = self.args.block.split('.', 1)
@@ -53,13 +56,18 @@ class CLI:
 
         self.sess = self.flow.session_at(Path(self.args.build_dir))
 
+        if self.args.monitor:
+            if self.args.block != None:
+                raise SystemExit("Cannot specify --monitor together with block/task.")
+            monitor(self.sess)
+            return
+
         if self.args.block and not self.flow.has_block(self.args.block):
             raise SystemExit(f"Block '{self.args.block}' not found.")
 
         tid = TargetId(self.args.block, self.args.task)
         if self.args.task and not self.flow.has_target(tid):
             raise SystemExit(f"Target '{tid}' not found.")
-
 
         if self.args.clean:
             self.sess.clean(self.args.block, self.args.task)
