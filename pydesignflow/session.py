@@ -121,11 +121,22 @@ class BuildSession:
 
     def reload_results(self):
         self.results = {}
-        for fn in self.build_dir.glob("*/*/result.json"):
-            with open(fn, "r") as f:
-                json_str = f.read()
-            block_id, task_id, res = Result.from_json(self, json_str)
-            self.results[TargetId(block_id, task_id)] = res
+        self.incomplete = set()
+        for block_id in self.flow:
+            block = self.flow[block_id]
+            for task_id, task in block.tasks.items():
+                tid = TargetId(block_id, task_id)
+                target_dir = self.build_dir / block_id / task_id
+                result_json_fn = target_dir / "result.json"
+                if result_json_fn.exists():
+                    with open(result_json_fn, "r") as f:
+                        json_str = f.read()
+                    block_id_json, task_id_json, res = Result.from_json(self, json_str)
+                    assert block_id_json == block_id
+                    assert task_id_json == task_id
+                    self.results[tid] = res        
+                elif target_dir.exists():
+                    self.incomplete.add(tid)            
 
     def get_result(self, result_id):
         try:
@@ -169,17 +180,13 @@ class BuildSession:
                 res=self.get_result(tid)
                 status=res.summary()
                 status = ANSITerm.FgGreen + status + ANSITerm.Reset
+            elif tid in self.incomplete:
+                status =  ANSITerm.FgYellow + "incomplete" + ANSITerm.Reset
             else:
-                if not show_targets:
+                if (not show_targets) or (not show_hidden) and task.hidden:
                     continue
-                expected_dir = self.build_dir / block_id / task_id
-                if expected_dir.exists():
-                    status =  ANSITerm.FgYellow + "incomplete" + ANSITerm.Reset
-                else:
-                    if (not show_hidden) and task.hidden:
-                        continue
-                    status = ""
-                    #status = ANSITerm.FgRed + "not found" + ANSITerm.Reset
+                status = ""
+                #status = ANSITerm.FgRed + "not found" + ANSITerm.Reset
             yield [f"  .{task_id}",  status, compact_docstr(target.__doc__)]
         
     def status(self, block_id:str, show_hidden:bool) -> str:
