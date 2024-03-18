@@ -32,6 +32,6 @@ Full documentation is found at https://pydesignflow.readthedocs.io or in the doc
 License
 -------
 
-Copyright 2022 - 2023 Tobias Kaiser
+Copyright 2022 - 2024 Tobias Kaiser
 
 SPDX-License-Identifier: Apache-2.0
