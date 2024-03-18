@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Tobias Kaiser <mail@tb-kaiser.de>
+# SPDX-License-Identifier: Apache-2.0
+
 from pydesignflow import Flow, Block, task, Result
 from pathlib import Path
 from datetime import datetime
