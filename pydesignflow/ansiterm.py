@@ -1,5 +1,8 @@
 # SPDX-FileCopyrightText: 2024 Tobias Kaiser <mail@tb-kaiser.de>
 # SPDX-License-Identifier: Apache-2.0
+import os
+if os.name == 'nt':
+    os.system("")
 
 class ANSITerm:
     FgBrightBlue = "\x1b[94m"
