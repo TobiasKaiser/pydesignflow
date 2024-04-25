@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import sys
+import os
 import argparse
 from pathlib import Path
 from .result import Result
@@ -41,6 +42,11 @@ class CLI:
         return parser
 
     def main(self, args: list[str], prog: str):
+        # https://stackoverflow.com/questions/12492810/python-how-can-i-make-the-ansi-escape-codes-to-work-also-in-windows
+        # Needed for ANSI escape codes (terminal colors) in Windows:
+        if os.name == 'nt':
+            os.system("")
+
         if len(self.flow.blocks) < 1:
             raise SystemExit("No blocks defined. Please define at least one block.")
 
