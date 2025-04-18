@@ -20,6 +20,8 @@ setuptools.setup(
     python_requires='>=3.8',
     install_requires=[
         "tabulate >= 0.8.0",
+        "docutils >= 0.21.2",
+        "Sphinx >= 7.3.7",
     ],
     entry_points={
         "console_scripts": [
