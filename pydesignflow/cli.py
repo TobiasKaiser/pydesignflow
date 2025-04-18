@@ -5,8 +5,7 @@ import sys
 import os
 import argparse
 from pathlib import Path
-from .result import Result
-from .errors import FlowError, ResultRequired
+from .errors import ResultRequired
 from .ansiterm import ANSITerm
 from .target import TargetId
 from .monitor import monitor

@@ -3,7 +3,6 @@
 
 from .errors import FlowError
 from .target import TargetPrototype
-from warnings import warn
 
 class Block():
     def __init__(self, dependency_map={}):

@@ -7,7 +7,7 @@ import re
 from typing import Literal
 
 from .result import Result
-from .errors import FlowError, ResultRequired
+from .errors import ResultRequired
 from .target import TargetId
 from .ansiterm import ANSITerm
 

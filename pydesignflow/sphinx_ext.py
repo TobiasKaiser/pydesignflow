@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import Directive
 import importlib
 from sphinx import addnodes
 from docutils.statemachine import ViewList
