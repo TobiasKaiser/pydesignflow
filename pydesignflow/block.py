@@ -9,7 +9,7 @@ class Block():
     def __init__(self, dependency_map={}):
         """
         Args:
-            dependecy_map: Dict mapping  block reference strings to block IDs.
+            dependency_map: Dict mapping  block reference strings to block IDs.
                 Keys of this dictionary must exactly match the blocks referenced.
         """
         self.tasks={}

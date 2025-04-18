@@ -7,7 +7,7 @@ from .target import TargetPrototype
 
 def task(requires:dict[str,str]={}, always_rebuild=False, hidden=False):
     """
-    In a previous versin, task was known as action.
+    In a previous version, task was known as action.
 
     Args:
         requires: Dict declaring dependencies of task. Dict keys declare which
