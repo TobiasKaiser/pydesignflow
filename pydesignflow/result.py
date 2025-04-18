@@ -95,6 +95,4 @@ class Result:
         else:
             duration_str = f"{duration_sec%60}s"
         r=f"✓ {finished_str} in {duration_str}"
-        #if not self.returned_data:
-        #    r+=" (w/o data)"
         return r

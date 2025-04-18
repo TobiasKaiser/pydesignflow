@@ -42,8 +42,6 @@ def main():
     args = sys.argv[1:]
     flow.flow.cli_main(args)
 
-    #print("Hello, World!")
-    #print(sys.argv)
 
 if __name__=="__main__":
     main()
