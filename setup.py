@@ -22,6 +22,7 @@ setuptools.setup(
         "tabulate >= 0.8.0",
         "docutils >= 0.21.2",
         "Sphinx >= 7.3.7",
+        "argcomplete >= 3.6.2",
     ],
     entry_points={
         "console_scripts": [
