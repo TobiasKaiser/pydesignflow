@@ -35,6 +35,8 @@ class CLI:
             help="Continuously monitor build directory for changes. A message is printed whenever a new target build is started or finished.")
         parser.add_argument("--hidden", "-a", action="store_true",
             help="Show hidden target.")
+        parser.add_argument("--no_format_output", "-nf", action="store_true",
+            help="Do not format and color output (useful for scripts).")
         parser.add_argument("block", nargs='?')
         parser.add_argument("task", nargs='?')
 
@@ -107,4 +109,4 @@ class CLI:
             sys.exit(1)
         if self.args.block:
             self.args.hidden = True
-        print(self.sess.status(block_id=self.args.block, show_hidden=self.args.hidden))
+        print(self.sess.status(block_id=self.args.block, show_hidden=self.args.hidden, fmrt=not self.args.no_format_output))

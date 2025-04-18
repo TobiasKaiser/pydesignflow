@@ -13,3 +13,16 @@ class ANSITerm:
     FgWhite = "\x1b[37m"
     Inverse = "\x1b[7m"
     Reset = "\x1b[0m"
+
+class NoColor:
+    FgBrightBlue = ""
+    BgBlue = ""
+    FgRed = ""
+    FgGreen = ""
+    FgYellow = ""
+    FgBlue = ""
+    FgMagenta = ""
+    FgCyan = ""
+    FgWhite = ""
+    Inverse = ""
+    Reset = ""
