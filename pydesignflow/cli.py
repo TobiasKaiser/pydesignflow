@@ -55,7 +55,7 @@ class CLI:
 
         self.args = self.create_parser(prog).parse_args(args)
 
-        if self.args.no_color:
+        if self.args.no_color or not sys.stdout.isatty():
             self.color = NoColor
         else:
             self.color = ANSITerm
