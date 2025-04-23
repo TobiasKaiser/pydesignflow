@@ -6,7 +6,7 @@ import os
 import argparse
 from pathlib import Path
 from .errors import ResultRequired
-from .ansiterm import ANSITerm
+from .ansiterm import ANSITerm, NoColor
 from .target import TargetId
 from .monitor import monitor
 
@@ -35,8 +35,10 @@ class CLI:
             help="Continuously monitor build directory for changes. A message is printed whenever a new target build is started or finished.")
         parser.add_argument("--hidden", "-a", action="store_true",
             help="Show hidden target.")
-        parser.add_argument("--no_format_output", "-nf", action="store_true",
-            help="Do not format and color output (useful for scripts).")
+        parser.add_argument("--no-color", "-n", action="store_true",
+            help="Do not color output.")
+        parser.add_argument("--brief", "-b", action="store_true",
+            help="Show brief list of blocks and target names instead of detailed table.")
         parser.add_argument("block", nargs='?')
         parser.add_argument("task", nargs='?')
 
@@ -52,6 +54,11 @@ class CLI:
             raise SystemExit("No blocks defined. Please define at least one block.")
 
         self.args = self.create_parser(prog).parse_args(args)
+
+        if self.args.no_color:
+            self.color = NoColor
+        else:
+            self.color = ANSITerm
 
         if self.args.block != None and ('.' in self.args.block):
             if self.args.task != None:
@@ -96,9 +103,9 @@ class CLI:
         except ResultRequired as r:
             print(r)
         else:
-            print(f"{ANSITerm.FgBrightBlue}PyDesignFlow Build Plan:{ANSITerm.Reset}\n{p}\n")
+            print(f"{self.color.FgBrightBlue}PyDesignFlow Build Plan:{self.color.Reset}\n{p}\n")
             if not self.args.dry_run:
-                p.run()
+                p.run(color=self.color)
 
     def print_status(self):
         if self.args.no_dependencies:
@@ -109,4 +116,4 @@ class CLI:
             sys.exit(1)
         if self.args.block:
             self.args.hidden = True
-        print(self.sess.status(block_id=self.args.block, show_hidden=self.args.hidden, fmrt=not self.args.no_format_output))
+        print(self.sess.status(block_id=self.args.block, show_hidden=self.args.hidden, color=self.color, brief=self.args.brief))

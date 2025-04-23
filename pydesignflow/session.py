@@ -9,7 +9,7 @@ from typing import Literal
 from .result import Result
 from .errors import ResultRequired
 from .target import TargetId
-from .ansiterm import ANSITerm, NoColor
+from .ansiterm import NoColor
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -51,9 +51,9 @@ class BuildPlan:
         status_list = [f" ‣ {tid.block_id}.{tid.task_id}" for tid in self.target_sequence] 
         return "\n".join(status_list)
 
-    def run(self):
-        style = ANSITerm.FgBrightBlue
-        reset = ANSITerm.Reset
+    def run(self, color=NoColor):
+        style = color.FgBrightBlue
+        reset = color.Reset
         for tid in self.target_sequence:
             print(f"{style}[PyDesignFlow]{reset} Running target {tid.block_id}.{tid.task_id}.")
             target = self.sess.flow.target(tid)
@@ -170,14 +170,11 @@ class BuildSession:
             shutil.rmtree(self.build_dir, ignore_errors=True)
         self.reload_results()
 
-    def status_block(self, block_id:str, show_hidden:bool=True, show_targets:bool=False, add_color:bool=True):
-        TermColor = NoColor
-        if add_color:
-            TermColor = ANSITerm
+    def status_block(self, block_id:str, show_hidden:bool=True, show_targets:bool=False, color=NoColor):
         
         block = self.flow[block_id]
-        yield [TermColor.FgBlue+block_id+TermColor.Reset, "",
-            TermColor.FgBlue+compact_docstr(block.__doc__)+TermColor.Reset]
+        yield [color.FgBlue+block_id+color.Reset, "",
+            color.FgBlue+compact_docstr(block.__doc__)+color.Reset]
         for task_id, task in block.tasks.items():
             tid = TargetId(block_id, task_id)
             target = self.flow.target(tid)
@@ -186,36 +183,38 @@ class BuildSession:
                     continue
                 res=self.get_result(tid)
                 status=res.summary()
-                status = TermColor.FgGreen + status + TermColor.Reset
+                status = color.FgGreen + status + color.Reset
             elif tid in self.incomplete:
-                status =  TermColor.FgYellow + "incomplete" + TermColor.Reset
+                status =  color.FgYellow + "incomplete" + color.Reset
             else:
                 if (not show_targets) or (not show_hidden) and task.hidden:
                     continue
                 status = ""
-                #status = TermColor.FgRed + "not found" + TermColor.Reset
+                #status = color.FgRed + "not found" + color.Reset
             yield [f"  .{task_id}",  status, compact_docstr(target.__doc__)]
         
-    def status(self, block_id:str, show_hidden:bool, fmrt:bool=True) -> str:
+    def status(self, block_id:str, show_hidden:bool, color, brief:bool) -> str:
         """
         Args:
             block_id: Display only status for requested block. If block_id is
                 None, status of all blocks will be listed.
             show_hidden: Should not run tasks also be shown?
-            fmrt: Should the output include coloring and formatting?
+            color: NoColor or ANSITerm
+            brief:
+                When true, only first column is returned and no table headers,
+                i.e. only block and task names without status information.
         """
         if block_id:
-            status_list = list(self.status_block(block_id, show_hidden=True, show_targets=True, add_color=fmrt))
+            status_list = list(self.status_block(block_id, show_hidden=True, show_targets=True, color=color))
         else:
             status_list = []
             for block_id in self.flow:
-                status_list += list(self.status_block(block_id, show_targets=show_hidden, show_hidden=False, add_color=fmrt))
+                status_list += list(self.status_block(block_id, show_targets=show_hidden, show_hidden=False, color=color))
         
-        header = [["Target", "Status", "Help"]]
-        table = header + status_list
 
-        if fmrt:
-            return tabulate.tabulate(table, headers="firstrow", tablefmt="simple")
+        if brief:
+            return "\n".join([row[0] for row in status_list])
         else:
-            # Output only block and task names without status information
-            return "\n".join([y for x in status_list for i, y in enumerate(x) if i == 0])
+            header = [["Target", "Status", "Help"]]
+            table = header + status_list
+            return tabulate.tabulate(table, headers="firstrow", tablefmt="simple")
