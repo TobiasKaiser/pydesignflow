@@ -3,8 +3,15 @@
 
 import sys
 import os
-import argparse
 from pathlib import Path
+
+try:
+    import argcomplete
+except:
+    argcomplete = None
+
+import argparse
+
 from .errors import ResultRequired
 from .ansiterm import ANSITerm, NoColor
 from .target import TargetId
@@ -15,6 +22,22 @@ class CLI:
         self.flow = flow
 
     def create_parser(self, prog):
+
+        def block_completer(prefix, parsed_args, **kwargs):
+            if '.' in prefix:
+                # Dot-Notation
+                block = prefix.split('.')[0]
+                parsed_args.block = block
+                return {f"{block}.{k}":v for k,v in task_completer(parsed_args=parsed_args, prefix=prefix, **kwargs).items()}
+            return {x:"Blocks" for x in self.flow.blocks.keys()}
+
+        def task_completer(parsed_args, **kwargs):
+            block = parsed_args.block
+            if (block == None) or (block not in self.flow.blocks):
+                # no task suggestions when no/undefined block is defined
+                return []
+            return {x:"Tasks" for x in self.flow.blocks[block].tasks.keys()}
+
         parser = argparse.ArgumentParser(
             description='PyDesignFlow command line interface',
             prog=prog,
@@ -39,9 +62,11 @@ class CLI:
             help="Do not color output.")
         parser.add_argument("--brief", "-b", action="store_true",
             help="Show brief list of blocks and target names instead of detailed table.")
-        parser.add_argument("block", nargs='?')
-        parser.add_argument("task", nargs='?')
+        parser.add_argument("block", nargs='?').completer = block_completer
+        parser.add_argument("task", nargs='?').completer = task_completer
 
+        if argcomplete:
+            argcomplete.autocomplete(parser, always_complete_options=False)
         return parser
 
     def main(self, args: list[str], prog: str):

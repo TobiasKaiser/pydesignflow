@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2024 Tobias Kaiser <mail@tb-kaiser.de>
 # SPDX-License-Identifier: Apache-2.0
 
+# PYTHON_ARGCOMPLETE_OK
+
 import importlib.util
 from pathlib import Path
 import sys

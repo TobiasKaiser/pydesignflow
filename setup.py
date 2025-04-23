@@ -21,6 +21,9 @@ setuptools.setup(
     install_requires=[
         "tabulate >= 0.8.0",
     ],
+    extras_require={
+        'argcomplete': ['argcomplete>=3.6.2'],
+    },
     entry_points={
         "console_scripts": [
             "flow = pydesignflow.shortcut:main"
