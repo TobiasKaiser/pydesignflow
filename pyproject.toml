@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2025 Tobias Kaiser <mail@tb-kaiser.de>
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version"]
+name = "pydesignflow"
+maintainers = [
+  {name = "Tobias Kaiser", email = "mail@tb-kaiser.de"}
+]
+description = "Micro-Framework for FPGA / VLSI Design Flow in Python"
+readme = "README.rst"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+dependencies = [
+    "tabulate >= 0.8.0",
+]
+license = "Apache-2.0"
+license-files = [
+    "LICENSE",
+]
+
+[project.optional-dependencies]
+argcomplete = [
+  "argcomplete>=3.6.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/TobiasKaiser/pydesignflow"
+Documentation = "https://pydesignflow.readthedocs.io"
+
+[tool.setuptools]
+packages = [
+    "pydesignflow",
+]
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"
+
+[project.scripts]
+flow = "pydesignflow.shortcut:main"
