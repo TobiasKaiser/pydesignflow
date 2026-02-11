@@ -10,14 +10,27 @@ import os
 import warnings
 
 def import_flow_addpath():
-    if not Path(Path.cwd() / "flow" / "__init__.py").exists():
+    flow_package = Path.cwd() / "flow" / "__init__.py"
+    flow_module = Path.cwd() / "flow.py"
+
+    if not (flow_package.exists() or flow_module.exists()):
         raise FileNotFoundError()
     sys.path.insert(0, str(Path.cwd()))
     import flow
     return flow
 
 def import_flow_importlib():
-    spec=importlib.util.spec_from_file_location("flow", Path.cwd() / "flow" / "__init__.py")
+    flow_package = Path.cwd() / "flow" / "__init__.py"
+    flow_module = Path.cwd() / "flow.py"
+
+    if flow_package.exists():
+        flow_path = flow_package
+    elif flow_module.exists():
+        flow_path = flow_module
+    else:
+        raise FileNotFoundError()
+
+    spec=importlib.util.spec_from_file_location("flow", flow_path)
     module = importlib.util.module_from_spec(spec)
     sys.modules["flow"] = module
     spec.loader.exec_module(module)
@@ -37,7 +50,7 @@ def main():
         flow = import_flow()
     except FileNotFoundError:
         print("Error: Could not import flow module.")
-        print("Ensure that your working directory has a subdirectory flow/ with __init__.py.")
+        print("Ensure that your working directory has either flow.py or flow/__init__.py.")
         sys.exit(1)
 
     prog = os.path.basename(sys.argv[0])
