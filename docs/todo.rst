@@ -3,7 +3,6 @@ Todo
 
 Non-Critical Bugs:
 
-- Document: :ref:`tests`
 - Document: :ref:`design_decisions`
 
 Feature requests:
