@@ -1,7 +1,7 @@
-.. _design_decisions:
+.. _design_principles:
 
-Design Decisions
-================
+Design Principles
+=================
 
 PyDesignFlow makes several deliberate design choices to keep the framework simple while giving designers maximum control over complex, long-running design flows.
 

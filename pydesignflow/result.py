@@ -6,11 +6,39 @@ import json
 from datetime import datetime
 
 class Result:
+    """
+    Container for task output data.
+
+    Result objects store structured data returned by tasks. Each task can return at most
+    one Result, which is serialized to JSON (result.json) in the task's output directory.
+    Results from dependency tasks are passed as parameters to dependent tasks.
+
+    Attributes can be assigned dynamically and support common Python types: str, bool, int,
+    float, Path, datetime, as well as lists and dictionaries containing these types.
+
+    Example of creating and returning a Result::
+
+        result = Result()
+        result.timing_met = True
+        result.netlist = cwd / "output.v"
+        result.area = 1234
+        result.metrics = {'delay': 5.2, 'power': 0.8}
+        return result
+
+    Tasks can access the results of their dependencies, example::
+
+        @task(requires={'syn': '.synthesize'})
+        def place_route(self, cwd, syn):
+            if syn.timing_met:
+                print(f"Using netlist: {syn.netlist}")
+                print(f"Area: {syn.area}")
+    """
     supported_scalar_types = (
         str, bool, int, float, Path, datetime
     )
 
     def __init__(self):
+        """Initialize an empty Result object."""
         self.__dict__["attrs"] = {}
 
     def check_value(self, value):

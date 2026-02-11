@@ -12,7 +12,41 @@ from .target import TargetId, Target
 import subprocess
 
 class Flow:
+    """
+    Central container for managing design flow blocks and tasks.
+
+    A Flow object holds all Block instances and provides the command-line interface
+    for executing tasks (targets). Blocks are added to the Flow using dictionary-style
+    assignment, which registers them with unique IDs.
+
+    The Flow object is typically created in flow.py (or flow/__init__.py) and made
+    accessible via the 'flow' command-line tool.
+
+    Example::
+
+        flow = Flow()
+        flow['synthesis'] = SynthesisBlock()
+        flow['simulation'] = SimulationBlock()
+
+        if __name__ == '__main__':
+            flow.cli_main()
+
+    This allows running tasks from the command line:
+
+    .. code-block:: bash
+
+        flow synthesis.run
+        flow simulation.run
+    """
     def __init__(self, hide_subprocess_errors=True):
+        """
+        Initialize a Flow.
+
+        Args:
+            hide_subprocess_errors: If True, subprocess errors are converted to
+                SystemExit with a concise error message. If False, the full
+                CalledProcessError exception is raised. Defaults to True.
+        """
         self.blocks = {}
         self.hide_subprocess_errors = hide_subprocess_errors
 

@@ -5,11 +5,35 @@ from .errors import FlowError
 from .target import TargetPrototype
 
 class Block():
+    """
+    Base class for design flow blocks.
+
+    A Block encapsulates a component of the design flow (e.g., a hardware module, testbench,
+    or software build). Blocks contain tasks (methods decorated with @task) that perform
+    design steps. Multiple instances of a Block can be created with different parameters.
+
+    Subclass Block to define custom design flow components, then add instances to a Flow object.
+
+    Example::
+
+        class SynthesisBlock(Block):
+            @task()
+            def synthesize(self, cwd):
+                result = Result()
+                result.netlist = cwd / "output.v"
+                return result
+
+        flow = Flow()
+        flow['fpga'] = SynthesisBlock()
+    """
     def __init__(self, dependency_map={}):
         """
+        Initialize a Block instance.
+
         Args:
-            dependency_map: Dict mapping  block reference strings to block IDs.
-                Keys of this dictionary must exactly match the blocks referenced.
+            dependency_map: Dictionary mapping symbolic block references to actual block IDs.
+                Required when tasks reference other blocks using symbolic names.
+                Keys must exactly match the block references used in task dependencies.
         """
         self.tasks={}
         self.block_references = set()

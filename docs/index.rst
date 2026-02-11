@@ -12,7 +12,7 @@ Welcome to PyDesignFlow's documentation!
 
    introduction
    reference
-   design_decisions
+   design_principles
    sphinx_ext
    filemgmt
    tests

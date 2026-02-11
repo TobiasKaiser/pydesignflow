@@ -7,19 +7,34 @@ from .target import TargetPrototype
 
 def task(requires:dict[str,str]={}, always_rebuild=False, hidden=False):
     """
-    In a previous version, task was known as action.
+    Decorator for defining tasks within a Block.
+
+    Tasks are methods that perform design flow steps and optionally return a Result object.
+    Each task gets its own output directory and can depend on results from other tasks.
 
     Args:
-        requires: Dict declaring dependencies of task. Dict keys declare which
-            argument names will be used to pass results to the decorated task
-            function. Values are requirement spec strings, described in
-            :ref:`taskdeps`.
-        always_rebuild: If this is set to True, the target will be rebuild every
-            time it is a direct dependency of another target
-            
+        requires: Dictionary declaring task dependencies. Keys are parameter names for the
+            decorated function; values are requirement specification strings (see :ref:`taskdeps`).
+            Dependencies are automatically built if missing.
+        always_rebuild: If True, this task is always rebuilt when it is a dependency of another
+            task, even if a result already exists. Defaults to False.
+        hidden: If True, the task is not shown in CLI help or status output. Defaults to False.
+
     Returns:
-       Anonymous function for decorating Block methods, which returns
-       TargetPrototype instances.
+        Decorator function that converts the method into a task.
+
+    Example::
+
+        @task()
+        def synthesize(self, cwd):
+            result = Result()
+            result.netlist = cwd / "netlist.v"
+            return result
+
+        @task(requires={'syn': '.synthesize'})
+        def place_route(self, cwd, syn):
+            print(f"Using {syn.netlist}")
+            return Result()
     """
     return lambda func: TargetPrototype(
         func=func,

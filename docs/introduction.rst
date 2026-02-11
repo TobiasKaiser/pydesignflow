@@ -1,63 +1,90 @@
 Introduction
 ============
 
+PyDesignFlow is built around three core concepts: **Blocks** encapsulate design components, **Tasks** define processing steps, and **Results** pass data between tasks. A **Flow** object manages all blocks and provides the command-line interface.
+
 Blocks
 ------
 
-Blocks are PyDesignFlow's first-class building blocks. To define a Block, create an own subclass of *pdf.Block*::
+Blocks encapsulate design components such as hardware modules, testbenches, or software builds. Define a block by subclassing *Block*::
 
-    import pydesignflow as pdf
+    from pydesignflow import Block, Flow, task, Result
 
-    class MyBlock(pdf.Block):
-        # ...
+    class MyBlock(Block):
+        # Define tasks here (see next section)
 
-In order to use a Block, instantiate it and assign it a particular block ID in connection with a Flow object::
+To use a block, instantiate it and assign it to a Flow with a unique block ID::
 
-    flow = pdf.Flow()
+    flow = Flow()
     flow['top'] = MyBlock()
 
-In this case, a new instance of MyBlock is assigned to the block ID *'top'*.
+Blocks can have parameters by passing arguments to ``__init__()``. Configure blocks during instantiation; once created, blocks should be considered immutable::
 
-If configurable blocks are desired, this should be done at Block subclass instatiation time, i. e. during flow declaration. Once created, a Block subclass object should be considered fixed in configuration.
+    class MyBlock(Block):
+        def __init__(self, voltage=1.8):
+            super().__init__()
+            self.voltage = voltage
+
+    flow['block_1v8'] = MyBlock(voltage=1.8)
+    flow['block_1v2'] = MyBlock(voltage=1.2)
 
 Tasks
 -----
 
-Define tasks by implementing methods and decorating them with *@pdf.task()*::
+Tasks are methods decorated with ``@task()`` that perform design flow steps. Each task receives a working directory (``cwd``) where it should write outputs::
 
-     class MyBlock(pdf.Block):
-        @pdf.task()
-        def syn(self, cwd):
-            syn = pdf.Result()
-            # ...
-            syn.result1 = "asdf"
-            return syn
+    class MyBlock(Block):
+        @task()
+        def synthesize(self, cwd):
+            result = Result()
+            result.netlist = cwd / "netlist.v"
+            result.timing_met = True
+            return result
 
-The *task()* decorator creates a TargetPrototype class for the function that it decorates. This is the only supported way for defining tasks. Please do not create custom TargetPrototype classes, such as by creating a subclass of TargetPrototype.
+**Tasks are not parameterized.** For similar variants (e.g., behavioral vs. netlist simulation), define separate tasks. Share common functionality through regular methods or functions. Use block-level parameters for configuration.
 
-**Tasks are not configurable.** If you want your block to provide multiple similar task (e. g. behavioral simulation, netlist simulation), declare them as as separate tasks. Functionality shared between tasks should best be encapsulated in functions or non-@task methods. You can also achieve configurability by have paramters on block-level.
+Targets
+~~~~~~~
 
-A task ID in connection with a block ID uniquely identifies a **target**. The task ID is the name of the task method; the block ID is the name under which a block is registered in the Flow object (*top* in the example above).
+A **target** is the combination of a block ID and task ID, uniquely identifying a buildable item. For example, ``top.synthesize`` refers to the ``synthesize`` task of the ``top`` block.
 
-Every target has its **own working directory**, which is passed as first argument (*cwd*) to the associated task method on invocation. The working directory is named *build/[block ID]/[task ID]*. The working directory can be used to store build results and furthermore contains a *result.json* file (see :ref:`result_json`) if the target was built successfully.
+Each target has its own working directory: ``build/[block ID]/[task ID]/``. This directory is passed as the ``cwd`` parameter and should contain all task outputs.
 
-Notice: The terms **target and task are used somewhat interchangably** in PyDesignFlow. The idea between the distinction is mostly relevant for the internal architecture of PyDesignFlow: A task is just the method defined for a particular Block class; a target connects the task to a particular Block *instance* and thus uniquely identifies a potential Result.
+.. note::
+   The terms "target" and "task" are often used interchangeably. Technically, a task is a method in a Block class, while a target refers to that task in a specific Block instance.
 
 .. _result_json:
 
-Result objects & result.json
-----------------------------
+Result Objects
+--------------
 
-As shown in the example above, a task can return a **Result** object. If a task does not need this functionality, it can also return None.
+Tasks can return a **Result** object to pass structured data to dependent tasks. If no data needs to be passed, return ``None``::
 
-Upon completion of a task, a *result.json* file is created in the target's working directory. It look like this::
+    @task()
+    def synthesize(self, cwd):
+        result = Result()
+        result.area = 1234
+        result.timing_met = True
+        result.netlist = cwd / "netlist.v"
+        return result
+
+Supported data types for Result attributes:
+
+- Scalars: ``str``, ``bool``, ``int``, ``float``, ``pathlib.Path``, ``datetime.datetime``
+- Containers: ``dict``, ``list``, ``tuple`` (can be nested)
+
+Path objects are serialized relative to the build directory. Upon task completion, the Result is serialized to ``result.json``::
 
     {
       "block_id": "top",
-      "task_id": "syn",
+      "task_id": "synthesize",
       "data": {
-        "result1": "asdf",
-        "returned_data": true,
+        "area": 1234,
+        "timing_met": true,
+        "netlist": {
+          "_type": "Path",
+          "value": "top/synthesize/netlist.v"
+        },
         "time_started": {
           "_type": "Time",
           "value": 1003.2
@@ -69,63 +96,79 @@ Upon completion of a task, a *result.json* file is created in the target's worki
       }
     }
 
-The string attribute *result1* that was assigned by the task *syn* has been written to this JSON file and can be used by subsequent tasks (see :ref:`taskdeps`).
-
-The following data types are suitable as Result attributes: dict, list, tuple, str, bool, int, float, datetime.datetime and pathlib.Path. dicts, list and tuples can also be nested. Path and datetime are supported using a simple JSON serialization / deserialization scheme. For *pathlib.Path* objects, paths relative to the *build/* directory are used for serialization.
- 
 .. _taskdeps:
 
 Task Dependencies
 -----------------
 
-Declare dependencies between tasks using the *requires* argument to *@task*.
+Declare dependencies using the ``requires`` argument to ``@task``. Keys are parameter names; values are requirement specifications::
 
-Example for delaring a task "pnr"::
+    @task(requires={'syn': '.synthesize'})
+    def place_route(self, cwd, syn):
+        print(f"Area: {syn.area}")
+        if not syn.timing_met:
+            raise RuntimeError("Timing not met")
+        # Continue with place & route...
+        return Result()
 
-    @pdf.task(requires={'syn':'.syn'})
-    def pnr(self, cwd, syn):
-        pnr = pdf.Result()
+Missing dependencies are built automatically before the task runs.
 
-        print("result1 of syn was: ", syn.result1)
-        # Do something with syn.result1 here.
+Requirement Specification Formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        pnr.result1 = "asdf"
-        return pnr
+**1. Within-block reference** (recommended for same block):
 
-The method name "pnr" is in also called the *task ID*.
+   ``.task_id`` - References a task in the same block::
 
-The keys of the *requires* dictionary are mapped to keyword arguments of the corresponding task function. Its values are **requirement spec** strings, which can be one of the following:
+       @task(requires={'syn': '.synthesize'})
+       def place_route(self, cwd, syn):
+           # ...
 
-1. To require the result of an task with the task ID "task_id", the requirement spec should be ".task_id".
-2. To require the result of an task "task_id" in a referenced block "block_ref", the requirement spec should be "block_ref.task_id".
-3. A direct reference to a block by its ID is also possible: "=block_id.task_id"
+**2. Symbolic block reference** (recommended for cross-block):
 
-Variant 2 is generally preferred over variant 3. Variant 2 requires that *"block_ref"* is included the *dependency_map* dictionary that is passed to the Block on creation. Example::
-    
-    class TestBlock(pdf.Block):
-        @pdf.task()
-        def syn(self, cwd):
-            syn = pdf.Result()
-            syn.result1 = "asdf"
-            return syn
+   ``block_ref.task_id`` - References a task in another block using a symbolic name::
 
-    class AnotherBlock(pdf.Block):
-        @pdf.task({'syn_of_xyz':'xyz.syn'})
-        def syn(self, cwd, syn_of_xyz):
-            syn = pdf.Result()
+       class MyBlock(Block):
+           @task(requires={'other_syn': 'dependency.synthesize'})
+           def my_task(self, cwd, other_syn):
+               # ...
 
-            print("result1 of syn (xyz) was: ", syn_of_xyz.result1)
-            # Do something with syn.result1 here.      
+       flow['top'] = MyBlock(dependency_map={'dependency': 'other_block'})
+       flow['other_block'] = OtherBlock()
 
-            syn.another_result = "hjkl"
-            return syn
+   The ``dependency_map`` maps symbolic names (``dependency``) to actual block IDs (``other_block``), enabling block reuse without code changes.
 
+**3. Direct block ID reference**:
 
-    flow = pdf.Flow()
-    flow['test'] = TestBlock()
-    flow['another'] = TestBlock(dependency_map={'xyz':'test'})
+   ``=block_id.task_id`` - Direct reference to a specific block::
 
-This layer of indirection makes it possible to swap out the subblock *xyz* of *AnotherBlock* without any modifications to the *AnotherBlock* class.
+       @task(requires={'syn': '=fpga_top.synthesize'})
+       def my_task(self, cwd, syn):
+           # ...
 
-By using only requirement spec variants 1 and 2, block IDs can be entirely kept out of Block subclass code; only the flow declaration will need to deal with block IDs.
+   This creates tight coupling and is generally discouraged.
+
+Multi-Block Example
+~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    class SynthesisBlock(Block):
+        @task()
+        def synthesize(self, cwd):
+            result = Result()
+            result.netlist = cwd / "output.v"
+            return result
+
+    class PlaceRouteBlock(Block):
+        @task(requires={'syn': 'synth.synthesize'})
+        def place_route(self, cwd, syn):
+            print(f"Using netlist: {syn.netlist}")
+            return Result()
+
+    flow = Flow()
+    flow['syn_block'] = SynthesisBlock()
+    flow['pnr_block'] = PlaceRouteBlock(dependency_map={'synth': 'syn_block'})
+
+Using symbolic references (variant 2) keeps block IDs out of Block class code, making blocks more reusable.
 
