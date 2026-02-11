@@ -9,6 +9,7 @@ The following code shows usage of *FileCollection*. The referenced files must ex
 
     from pydesignflow import filemgmt
 
+    c = filemgmt.FileCollection()
     c.add(Path("fast_hot.lib"),  speed='fast', temp=100)
     c.add(Path("fast_cold.lib"), speed='fast', temp=-10)
     c.add(Path("slow_hot.lib"),  speed='slow', temp=100)
