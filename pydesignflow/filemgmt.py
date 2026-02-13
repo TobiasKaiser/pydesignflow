@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-File management helper for cell libraries and PDKs.
+File management helpers for organizing VLSI library and design files.
+
+This module provides utilities for managing collections of files with associated
+attributes (e.g., process corners, temperatures, voltages). It is independent of
+the core PyDesignFlow functionality.
 """
 
 from pathlib import Path
@@ -10,11 +14,21 @@ from dataclasses import dataclass
 import re
 
 class FileManagementError(Exception):
+    """Exception raised for file management related errors."""
     pass
 
 def checkfile(path: Path) -> Path:
     """
-    Convenience function: check that path exists and is a file, then return path.
+    Check that path exists and is a file, then return path.
+
+    Args:
+        path: Path to verify.
+
+    Returns:
+        The input path if validation succeeds.
+
+    Raises:
+        FileManagementError: If path does not exist or is not a file.
     """
     if not path.exists():
         raise FileManagementError(f"Path '{path}' does not exist.")
@@ -24,7 +38,16 @@ def checkfile(path: Path) -> Path:
 
 def checkdir(path: Path) -> Path:
     """
-    Convenience function: check that path exists and is a directory, then return path.
+    Check that path exists and is a directory, then return path.
+
+    Args:
+        path: Path to verify.
+
+    Returns:
+        The input path if validation succeeds.
+
+    Raises:
+        FileManagementError: If path does not exist or is not a directory.
     """
     if not path.exists():
         raise FileManagementError(f"Path '{path}' does not exist.")
@@ -34,6 +57,13 @@ def checkdir(path: Path) -> Path:
 
 @dataclass
 class FileCollectionItem:
+    """
+    A file with associated attributes.
+
+    Attributes:
+        path: File path.
+        attrs: Dictionary of attributes (e.g., process corner, temperature).
+    """
     path: Path
     attrs: dict[str, object]
 
@@ -42,15 +72,26 @@ class FileCollectionItem:
 
 class FileCollection:
     """
-    A collection of files of the same type with different attributes such as voltage, process corner, temperature etc.
+    A collection of files with associated attributes.
+
+    Manages files of the same type (e.g., timing libraries, design files) that differ
+    in attributes such as voltage, process corner, or temperature. Supports filtering,
+    tagging, and pattern-based creation from directories.
     """
 
     def __init__(self, items: list[FileCollectionItem]=None):
+        """
+        Initialize FileCollection.
+
+        Args:
+            items: Optional list of FileCollectionItem objects.
+        """
         if items == None:
             items = []
         self.items = items
 
     def __add__(self, other):
+        """Combine two FileCollections."""
         return FileCollection(self.items + other.items)
 
     def __len__(self):
@@ -64,7 +105,13 @@ class FileCollection:
 
     def tag(self, **attrs: dict[str, object]):
         """
-        Returns copy of the FileCollection with passed attrs added to all elements.
+        Add attributes to all items in the collection.
+
+        Args:
+            **attrs: Attributes to add to each file.
+
+        Returns:
+            New FileCollection with updated attributes.
         """
         ret = FileCollection()
         for i in self.items:
@@ -73,7 +120,14 @@ class FileCollection:
 
     def add(self, path: Path, **attrs: dict[str, object]):
         """
-        Adds file with given path and attributes to collection. Also ensures file existence via checkfile.
+        Add a file to the collection.
+
+        Args:
+            path: File path to add.
+            **attrs: Attributes for this file.
+
+        Raises:
+            FileManagementError: If file does not exist.
         """
         self.items.append(FileCollectionItem(checkfile(path), attrs))
 
@@ -82,9 +136,17 @@ class FileCollection:
 
     def filter(self, missing_key_deselects: bool = False, **filters: dict[str, object]):
         """
-        Returns FileCollection with all files that match given filters.
+        Filter files by attributes.
+
+        Args:
+            missing_key_deselects: If True, exclude items that lack any filter key.
+                                   If False (default), only check keys that exist.
+            **filters: Attribute filters (e.g., speed='fast', temp=100).
+
+        Returns:
+            New FileCollection with matching files.
         """
-        
+
         def filter_func(item):
             for key, value in filters.items():
                 try:
@@ -94,14 +156,22 @@ class FileCollection:
                     if missing_key_deselects:
                         return False
             return True
-        
+
         return FileCollection(list(filter(filter_func, self.items)))
 
     def one(self, missing_key_deselects: bool = False, **filters: dict[str, object]):
         """
-        Returns element that matches filters.
+        Get the single file matching the filters.
 
-        Raises FileManagementError if filters are ambiguous (multiple matches) or when no match is found.
+        Args:
+            missing_key_deselects: Passed to :meth:`filter`.
+            **filters: Attribute filters.
+
+        Returns:
+            Path of the unique matching file.
+
+        Raises:
+            FileManagementError: If no match or multiple matches found.
         """
         res = self.filter(missing_key_deselects=missing_key_deselects, **filters)
         if len(res) < 1:
@@ -113,7 +183,7 @@ class FileCollection:
 
     def __call__(self, *args, **kwargs):
         """
-        Alias for .one()
+        Shorthand for :meth:`one`. Allows ``collection(speed='fast')`` syntax.
         """
         return self.one(*args, **kwargs)
 
