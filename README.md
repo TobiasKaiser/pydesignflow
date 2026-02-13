@@ -2,6 +2,10 @@
 
 A **technology- and tool-agnostic micro-framework** for building **FPGA / VLSI design flows** in Python.
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![ORDeC on PyPI](https://img.shields.io/pypi/v/pydesignflow.svg)](https://pypi.python.org/pypi/pydesignflow)
+[![Read the Docs](https://img.shields.io/readthedocs/pydesignflow)](https://pydesignflow.readthedocs.io)
+
 ## Quick Example
 
 ```python
