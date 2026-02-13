@@ -87,5 +87,14 @@ Auto-generated Reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following documentation is generated using the :ref:`sphinx_ext` directive.
+Notice that task dependencies are now clickable cross-references, allowing you
+to navigate the dependency graph interactively.
+
+**Example cross-references:** You can reference tasks from anywhere in the documentation:
+
+- :flow:task:`top.step1` - The initial task with no dependencies
+- :flow:task:`top.step2` - Depends on step1
+- :flow:task:`top.step9` - A complex task with multiple dependencies and ``always_rebuild`` flag
+- :flow:block:`top` - The ExampleBlock instance
 
 .. designflow:: tests.flow_example1
