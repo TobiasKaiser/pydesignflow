@@ -16,7 +16,6 @@ Welcome to PyDesignFlow's documentation!
    sphinx_ext
    filemgmt
    tests
-   todo
 
 Indices and tables
 ==================
