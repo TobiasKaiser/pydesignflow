@@ -56,6 +56,20 @@ Tests in ``test_exitcode.py``:
 - SystemExit on task failures
 - CLI error reporting
 
+Command-Line Interface
+----------------------
+
+Tests in ``test_cli.py``:
+
+- Basic task execution via CLI (``flow.cli_main()``)
+- Dependency resolution through CLI
+- Status display command
+- ``--dry-run`` flag (print plan without executing)
+- ``--clean`` flag (remove task and block results)
+- Error handling for invalid blocks and tasks
+- Dot notation parsing (``block.task`` syntax)
+- Empty flow validation
+
 File Management
 ---------------
 
@@ -73,7 +87,7 @@ Example Flow
 
 The test suite includes ``flow_example1``, a complete example flow used to test dependency resolution and result passing. It contains an ``ExampleBlock`` with 10 tasks that form a complex dependency tree, including tasks with multiple dependencies and tasks marked to always rebuild.
 
-This example flow is used by ``test_single_block.py`` and ``test_dependency_list.py`` to verify correct behavior.
+This example flow is used by ``test_single_block.py``, ``test_dependency_list.py``, and ``test_cli.py`` to verify correct behavior.
 
 .. figure:: figs/example_block.svg
    :class: with-border
