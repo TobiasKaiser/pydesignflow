@@ -12,7 +12,7 @@ maintainers = [
   {name = "Tobias Kaiser", email = "mail@tb-kaiser.de"}
 ]
 description = "Micro-Framework for FPGA / VLSI Design Flow in Python"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
