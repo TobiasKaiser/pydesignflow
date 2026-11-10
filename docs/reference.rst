@@ -11,3 +11,6 @@ Reference
 
 .. autoclass:: pydesignflow.Result
     :members:
+
+.. autoclass:: pydesignflow.PickledValue
+    :members:

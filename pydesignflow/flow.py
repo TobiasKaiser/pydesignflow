@@ -38,7 +38,7 @@ class Flow:
         flow synthesis.run
         flow simulation.run
     """
-    def __init__(self, hide_subprocess_errors=True, allow_pickle=False):
+    def __init__(self, hide_subprocess_errors=True, allow_unpickle=False):
         """
         Initialize a Flow.
 
@@ -46,14 +46,15 @@ class Flow:
             hide_subprocess_errors: If True, subprocess errors are converted to
                 SystemExit with a concise error message. If False, the full
                 CalledProcessError exception is raised. Defaults to True.
-            allow_pickle: If True, Result attributes of types without a JSON
-                representation are stored via pickle. Loading pickled data can
-                execute arbitrary code, so only enable this for trusted build
-                directories. Defaults to False.
+            allow_unpickle: If True, pickled Result attributes are unpickled
+                when results are loaded. If False, they are loaded as
+                PickledValue placeholders. Unpickling can execute arbitrary
+                code, so only enable this for trusted build directories.
+                Defaults to False.
         """
         self.blocks = {}
         self.hide_subprocess_errors = hide_subprocess_errors
-        self.allow_pickle = allow_pickle
+        self.allow_unpickle = allow_unpickle
 
     def __iter__(self):
         return iter(self.blocks)
