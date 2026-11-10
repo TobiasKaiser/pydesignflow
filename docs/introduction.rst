@@ -72,6 +72,7 @@ Supported data types for Result attributes:
 
 - Scalars: ``str``, ``bool``, ``int``, ``float``, ``pathlib.Path``, ``datetime.datetime``
 - Containers: ``dict``, ``list``, ``tuple`` (can be nested)
+- Any other picklable object, if pickle is enabled (see :ref:`result_pickle`)
 
 Path objects are serialized relative to the build directory. Upon task completion, the Result is serialized to ``result.json``::
 
@@ -95,6 +96,28 @@ Path objects are serialized relative to the build directory. Upon task completio
         }
       }
     }
+
+.. _result_pickle:
+
+Storing Other Types via Pickle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Attributes of types without a JSON representation (e.g. custom classes or numpy arrays) can be stored via :mod:`pickle`. This is disabled by default and must be enabled when creating the Flow::
+
+    flow = Flow(allow_pickle=True)
+
+Pickled values are embedded base64-encoded in ``result.json``::
+
+    "model": {
+      "_type": "Pickle",
+      "value": "gA..."
+    }
+
+Unpicklable values are rejected with a ``ValueError`` as soon as they are assigned to a Result. If pickle is disabled, storing a non-JSON value fails when the Result is written, and loading a ``result.json`` that contains pickled data fails with a ``ValueError`` instead of unpickling it.
+
+.. warning::
+
+    Unpickling data can execute arbitrary code. Only enable ``allow_pickle`` for build directories you trust. Pickled results may also become unloadable when the pickled class is renamed, moved, or changed incompatibly.
 
 .. _taskdeps:
 

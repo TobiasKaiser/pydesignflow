@@ -4,6 +4,8 @@
 from pathlib import Path
 import json
 from datetime import datetime
+import pickle
+import base64
 
 class Result:
     """
@@ -15,6 +17,8 @@ class Result:
 
     Attributes can be assigned dynamically and support common Python types: str, bool, int,
     float, Path, datetime, as well as lists and dictionaries containing these types.
+    Other picklable types are stored via pickle if the Flow was created with
+    allow_pickle=True.
 
     Example of creating and returning a Result::
 
@@ -51,7 +55,12 @@ class Result:
                     raise ValueError(f"Attribute dict keys must be str.")
                 self.check_value(v)
         elif not isinstance(value, self.supported_scalar_types):
-            raise ValueError(f"Unsupported attribute type: {value}")
+            # Other types are pickled. Checked here so that unpicklable values
+            # fail at assignment instead of when result.json is written.
+            try:
+                pickle.dumps(value)
+            except Exception as e:
+                raise ValueError(f"Unsupported attribute type: {value}") from e
 
     def __setattr__(self, key, value):
         self.check_value(value)
@@ -68,9 +77,12 @@ class Result:
                 return {"_type":"Path","value":str(obj)}
             elif isinstance(obj, datetime):
                 return {"_type":"Time","value":obj.timestamp()}
+            elif sess.flow.allow_pickle:
+                return {"_type":"Pickle","value":base64.b64encode(pickle.dumps(obj)).decode("ascii")}
             else:
-                return super().default(obj)
-                
+                raise ValueError(f"Unsupported attribute type: {obj!r}. "
+                    "Pass allow_pickle=True to Flow to store it via pickle.")
+
         e = json.JSONEncoder(indent=2, default=default)
         return e.encode({
             "block_id":  block_id,
@@ -88,15 +100,21 @@ class Result:
                 return sess.build_dir / Path(obj["value"])
             elif t == "Time":
                 return datetime.fromtimestamp(obj["value"])
+            elif t == "Pickle":
+                # Refuse before unpickling, as unpickling itself can execute code.
+                if not sess.flow.allow_pickle:
+                    raise ValueError("result.json contains pickled data, but "
+                        "pickle is disabled. Pass allow_pickle=True to Flow to load it.")
+                return pickle.loads(base64.b64decode(obj["value"]))
 
         result_json = json.loads(json_str, object_hook=object_hook)
-        
+
         assert set(result_json.keys()) == set(("block_id", "task_id", "data"))
 
         block_id  = result_json["block_id"]
         task_id = result_json["task_id"]
         attrs     = result_json["data"]
-        
+
         res = Result()
         for k, v in attrs.items():
             res.attrs[k] = v
