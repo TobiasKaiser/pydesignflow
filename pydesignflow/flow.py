@@ -38,7 +38,7 @@ class Flow:
         flow synthesis.run
         flow simulation.run
     """
-    def __init__(self, hide_subprocess_errors=True):
+    def __init__(self, hide_subprocess_errors=True, allow_unpickle=False):
         """
         Initialize a Flow.
 
@@ -46,9 +46,15 @@ class Flow:
             hide_subprocess_errors: If True, subprocess errors are converted to
                 SystemExit with a concise error message. If False, the full
                 CalledProcessError exception is raised. Defaults to True.
+            allow_unpickle: If True, pickled Result attributes are unpickled
+                when results are loaded. If False, they are loaded as
+                PickledValue placeholders. Unpickling can execute arbitrary
+                code, so only enable this for trusted build directories.
+                Defaults to False.
         """
         self.blocks = {}
         self.hide_subprocess_errors = hide_subprocess_errors
+        self.allow_unpickle = allow_unpickle
 
     def __iter__(self):
         return iter(self.blocks)
@@ -67,7 +73,7 @@ class Flow:
         """
         Returns the flow base directory, which typically includes flow.py or
         flow/__init__.py. Currently, it is assumed that this is always the
-        current working directory (cwd). 
+        current working directory (cwd).
         """
         return Path.cwd()
 
@@ -77,7 +83,7 @@ class Flow:
     def cli_main(self, args: list[str], prog="flow") -> None:
         """
         Invoke the Flow's command line interface.
-        
+
         Args:
             args: List of command line arguments, e.g. argv[1:]
             prog: Name of executable, e.g. argv[0]
